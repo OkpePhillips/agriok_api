@@ -8,7 +8,6 @@ from .models import (
     Order,
     OrderItem,
     Product,
-    Payment,
 )
 from django.contrib.auth import authenticate
 from django.contrib.auth import password_validation
@@ -20,7 +19,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["email", "first_name", "last_name", "phone_number", "password"]
+        fields = [
+            "email",
+            "first_name",
+            "last_name",
+            "city",
+            "country",
+            "phone_number",
+            "postal_code",
+            "password",
+        ]
 
     def create(self, validated_data):
         user = CustomUser.objects.create_user(
@@ -28,7 +36,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
             first_name=validated_data.get("first_name", ""),
             last_name=validated_data.get("last_name", ""),
+            city=validated_data.get("city", ""),
+            country=validated_data.get("country", ""),
             phone_number=validated_data.get("phone_number", ""),
+            postal_code=validated_data.get("postal_code", ""),
         )
         return user
 
@@ -54,7 +65,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "city",
+            "country",
             "phone_number",
+            "postal_code",
             "is_active",
             "is_staff",
         ]
@@ -63,7 +77,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["first_name", "last_name", "phone_number"]
+        fields = [
+            "first_name",
+            "last_name",
+            "city",
+            "country",
+            "phone_number",
+            "postal_code",
+        ]
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -123,9 +144,3 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "user", "products", "total_price", "status", "created_at"]
-
-
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = ["id", "order", "payment_intent", "amount", "status", "created_at"]

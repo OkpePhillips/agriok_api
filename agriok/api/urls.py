@@ -14,8 +14,7 @@ from .views import (
     CartView,
     PlaceOrderView,
     OrderHistoryView,
-    InitializePaymentView,
-    VerifyPaymentView,
+    UserAPIView,
 )
 
 
@@ -39,14 +38,6 @@ urlpatterns = [
     path("cart/add/", AddToCartView.as_view(), name="add-to-cart"),
     path("order/place/", PlaceOrderView.as_view(), name="place-order"),
     path("order/history/", OrderHistoryView.as_view(), name="order-history"),
-    path(
-        "payment/initialize/",
-        InitializePaymentView.as_view(),
-        name="initialize-payment",
-    ),
-    path(
-        "payment/verify/<str:reference>/",
-        VerifyPaymentView.as_view(),
-        name="verify-payment",
-    ),
+    path("users/", UserAPIView.as_view(), name="users"),
+    path("users/<int:pk>/", UserAPIView.as_view(), name="users"),
 ]

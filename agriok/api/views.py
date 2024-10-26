@@ -297,58 +297,17 @@ class OrderHistoryView(APIView):
         return Response(serializer.data)
 
 
-PAYSTACK_SECRET_KEY = "your-paystack-secret-key"  # Add this to settings
+class UserAPIView(APIView):
+    permission_classes = [IsAdminUser]
 
+    def get(self, request):
+        users = CustomUser.objects.all()
+        serializer = UserProfileSerializer(users, many=True)
+        return Response(serializer.data)
 
-class InitializePaymentView(APIView):
-    def post(self, request):
-        user = request.user
-        total_amount = request.data.get("total_amount")
-
-        order = Order.objects.create(user=user, total_amount=total_amount)
-
-        # Initialize Paystack payment
-        url = "https://api.paystack.co/transaction/initialize"
-        headers = {
-            "Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "email": user.email,
-            "amount": int(total_amount * 100),  # Paystack accepts kobo, not naira
-            "reference": f"order_{order.id}",
-            "callback_url": "https://your-website.com/payment/verify",  # Replace with your site
-        }
-
-        response = requests.post(url, json=payload, headers=headers)
-        data = response.json()
-
-        if response.status_code == 200 and data["status"]:
-            order.payment_reference = data["data"]["reference"]
-            order.save()
-            return Response({"payment_url": data["data"]["authorization_url"]})
-        return Response(data, status=status.HTTP_400_BAD_REQUEST)
-
-
-class VerifyPaymentView(APIView):
-    def get(self, request, reference):
-        url = f"https://api.paystack.co/transaction/verify/{reference}"
-        headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
-
-        response = requests.get(url, headers=headers)
-        data = response.json()
-
-        if response.status_code == 200 and data["status"]:
-            try:
-                order = Order.objects.get(payment_reference=reference)
-                if data["data"]["status"] == "success":
-                    order.status = "Paid"
-                else:
-                    order.status = "Failed"
-                order.save()
-                return Response({"status": order.status})
-            except Order.DoesNotExist:
-                return Response(
-                    {"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND
-                )
-        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        user = CustomUser.objects.get(pk=pk)
+        if user is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

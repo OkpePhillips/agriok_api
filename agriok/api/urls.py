@@ -15,6 +15,8 @@ from .views import (
     PlaceOrderView,
     OrderHistoryView,
     UserAPIView,
+    FarmlandAPIView,
+    FarmlandDetailAPIView,
 )
 
 
@@ -40,4 +42,6 @@ urlpatterns = [
     path("order/history/", OrderHistoryView.as_view(), name="order-history"),
     path("users/", UserAPIView.as_view(), name="users"),
     path("users/<int:pk>/", UserAPIView.as_view(), name="users"),
+    path("farmlands/", FarmlandAPIView.as_view(), name="farmlands"),
+    path("farmlands/<int:pk>/", FarmlandDetailAPIView.as_view(), name="farmland"),
 ]

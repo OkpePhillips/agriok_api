@@ -8,6 +8,7 @@ from .models import (
     Order,
     OrderItem,
     Product,
+    Farmland,
 )
 from django.contrib.auth import authenticate
 from django.contrib.auth import password_validation
@@ -99,7 +100,8 @@ class ChangePasswordSerializer(serializers.Serializer):
 class FarmInsightSerializer(serializers.ModelSerializer):
     class Meta:
         model = Insight
-        fields = "__all__"
+        fields = ["id", "title", "content", "date_posted", "user", "farmland"]
+        read_only_fields = ["id", "date_posted", "user"]
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -137,10 +139,24 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "user", "created_at", "total_amount", "items"]
+        fields = [
+            "id",
+            "user",
+            "created_at",
+            "status",
+            "total_amount",
+            "items",
+        ]
 
 
-class OrderSerializer(serializers.ModelSerializer):
+class FarmlandSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Order
-        fields = ["id", "user", "products", "total_price", "status", "created_at"]
+        model = Farmland
+        fields = [
+            "id",
+            "sensors",
+            "size",
+            "location",
+            "user",
+        ]
+        read_only_fields = ["user"]

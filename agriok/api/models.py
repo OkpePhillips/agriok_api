@@ -57,11 +57,24 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 User = get_user_model()
 
 
+class Farmland(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="farmlands")
+    sensors = models.CharField(max_length=200)
+    size = models.DecimalField(max_digits=10, decimal_places=2)
+    location = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"Farmland {self.id} for {self.user}"
+
+
 class Insight(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     date_posted = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="insights")
+    farmland = models.ForeignKey(
+        Farmland, on_delete=models.CASCADE, related_name="insights"
+    )
 
     def __str__(self):
         return self.title
@@ -97,7 +110,6 @@ class CartItem(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    products = models.ManyToManyField(Product, related_name="orders")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, default="Pending")

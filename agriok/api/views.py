@@ -13,6 +13,7 @@ from .models import (
     CartItem,
     Order,
     OrderItem,
+    Farmland,
 )
 from .serializers import (
     RegisterSerializer,
@@ -24,7 +25,9 @@ from .serializers import (
     ProductSerializer,
     CartSerializer,
     OrderSerializer,
+    FarmlandSerializer,
 )
+from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import get_object_or_404
 
@@ -298,16 +301,78 @@ class OrderHistoryView(APIView):
 
 
 class UserAPIView(APIView):
+
     permission_classes = [IsAdminUser]
 
-    def get(self, request):
-        users = CustomUser.objects.all()
-        serializer = UserProfileSerializer(users, many=True)
+    def get(self, request, pk=None):
+        """Admin Processes to retrieve all users"""
+        if pk:
+            user = get_object_or_404(CustomUser, pk=pk)
+            serializer = UserProfileSerializer(user)
+        else:
+            users = CustomUser.objects.all()
+            serializer = UserProfileSerializer(users, many=True)
         return Response(serializer.data)
 
     def delete(self, request, pk):
-        user = CustomUser.objects.get(pk=pk)
-        if user is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        """Admin Process to delete a specific user"""
+        user = get_object_or_404(CustomUser, pk=pk)
         user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FarmlandAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        farmlands = Farmland.objects.filter(user=request.user)
+        serializer = FarmlandSerializer(farmlands, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        user = request.user
+        print(user)
+        serializer = FarmlandSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FarmlandDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
+
+    def get_object(self, pk):
+        try:
+            return Farmland.objects.get(pk=pk)
+        except Farmland.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        farmland = self.get_object(pk)
+        if farmland is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = FarmlandSerializer(farmland)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        farmland = self.get_object(pk)
+        if farmland is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, farmland)
+        data = request.data.copy()
+        data.pop("user", None)
+        serializer = FarmlandSerializer(farmland, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        farmland = self.get_object(pk)
+        if farmland is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(request, farmland)
+        farmland.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

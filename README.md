@@ -129,7 +129,6 @@ Below is a summary of key endpoints.
 
 ### Future Enhancements
 
-- **Notifications System**: Alert users of low stock, new insights, or significant changes in farmland metrics.
 - **Enhanced Reporting**: Allow users to generate custom reports on transaction history or farmland productivity.
 - **Analytics**: Visualize insights and trends based on sensor data to help users optimize their farms.
 

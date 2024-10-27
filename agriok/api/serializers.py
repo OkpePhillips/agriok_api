@@ -9,6 +9,8 @@ from .models import (
     OrderItem,
     Product,
     Farmland,
+    Transaction,
+    Post,
 )
 from django.contrib.auth import authenticate
 from django.contrib.auth import password_validation
@@ -160,3 +162,25 @@ class FarmlandSerializer(serializers.ModelSerializer):
             "user",
         ]
         read_only_fields = ["user"]
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = [
+            "id",
+            "user",
+            "items",
+            "amount",
+            "description",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["user", "created_at", "updated_at"]
+
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ["id", "title", "content", "user", "created_at", "updated_at"]
+        read_only_fields = ["user", "created_at", "updated_at"]

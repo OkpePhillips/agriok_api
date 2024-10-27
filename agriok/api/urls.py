@@ -11,12 +11,13 @@ from .views import (
     ProductDetailAPIView,
     ChangePasswordView,
     AddToCartView,
-    CartView,
+    CartDetailAPIView,
     PlaceOrderView,
     OrderHistoryView,
     UserAPIView,
     FarmlandAPIView,
     FarmlandDetailAPIView,
+    TransactionView,
 )
 
 
@@ -36,7 +37,7 @@ urlpatterns = [
     path(
         "profile/change-password/", ChangePasswordView.as_view(), name="change-password"
     ),
-    path("cart/", CartView.as_view(), name="cart"),
+    path("cart/<int:pk>/", CartDetailAPIView.as_view(), name="cart"),
     path("cart/add/", AddToCartView.as_view(), name="add-to-cart"),
     path("order/place/", PlaceOrderView.as_view(), name="place-order"),
     path("order/history/", OrderHistoryView.as_view(), name="order-history"),
@@ -44,4 +45,8 @@ urlpatterns = [
     path("users/<int:pk>/", UserAPIView.as_view(), name="users"),
     path("farmlands/", FarmlandAPIView.as_view(), name="farmlands"),
     path("farmlands/<int:pk>/", FarmlandDetailAPIView.as_view(), name="farmland"),
+    path("transactions", TransactionView.as_view(), name="transactions"),
+    path(
+        "transactions/<uuid:pk>/", TransactionView.as_view(), name="transaction-detail"
+    ),
 ]

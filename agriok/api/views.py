@@ -14,6 +14,8 @@ from .models import (
     Order,
     OrderItem,
     Farmland,
+    Transaction,
+    Post,
 )
 from .serializers import (
     RegisterSerializer,
@@ -26,13 +28,45 @@ from .serializers import (
     CartSerializer,
     OrderSerializer,
     FarmlandSerializer,
+    TransactionSerializer,
+    PostSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
 class RegisterView(APIView):
+    """
+    View to register a new user.
+    """
+
+    @swagger_auto_schema(
+        operation_summary="Register a new user",
+        operation_description="This endpoint allows a new user to register by providing a first_name, last_name, username, email, and password.",
+        tags=["User Processes"],
+        request_body=RegisterSerializer,
+        responses={
+            201: openapi.Response(
+                description="Successfully registered user details",
+                examples={
+                    "application/json": {"message": "User registered successfully."}
+                },
+            ),
+            400: openapi.Response(
+                description="Bad Request - validation errors",
+                examples={
+                    "application/json": {
+                        "username": ["This field is required."],
+                        "email": ["This field is required."],
+                        "password": ["This field is required."],
+                    }
+                },
+            ),
+        },
+    )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -45,6 +79,32 @@ class RegisterView(APIView):
 
 
 class EmailLoginView(APIView):
+    """
+    View for user email login.
+    """
+
+    @swagger_auto_schema(
+        operation_summary="User Login",
+        operation_description="This endpoint allows a user to login using their email and password.",
+        tags=["User Processes"],
+        request_body=EmailLoginSerializer,
+        responses={
+            201: openapi.Response(
+                description="Login successful, returns user ID",
+                examples={"application/json": {"user_id": 1}},
+            ),
+            400: openapi.Response(
+                description="Bad Request - validation errors",
+                examples={
+                    "application/json": {
+                        "non_field_errors": [
+                            "Unable to log in with provided credentials."
+                        ]
+                    }
+                },
+            ),
+        },
+    )
     def post(self, request):
         serializer = EmailLoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -64,8 +124,23 @@ class EmailLoginView(APIView):
 
 
 class ProfileView(APIView):
+    """
+    View to get the profile of the authenticated user.
+    """
+
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Get user profile",
+        operation_description="This endpoint allows authenticated users to retrieve their profile information.",
+        tags=["User Processes"],
+        responses={
+            200: openapi.Response(
+                description="User profile details", schema=UserProfileSerializer
+            ),
+            401: "Unauthorized",
+        },
+    )
     def get(self, request):
         user = request.user
         serializer = UserProfileSerializer(user)
@@ -73,6 +148,10 @@ class ProfileView(APIView):
 
 
 class UpdateProfileView(APIView):
+    """
+    View to update the authenticated user's profile.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -80,6 +159,19 @@ class UpdateProfileView(APIView):
         serializer = UserProfileSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        operation_summary="Update user profile",
+        operation_description="This endpoint allows authenticated users to update their profile information.",
+        tags=["User Processes"],
+        request_body=UserUpdateSerializer,
+        responses={
+            200: openapi.Response(
+                description="Profile updated successfully", schema=UserProfileSerializer
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
     def put(self, request):
         user = request.user
         serializer = UserUpdateSerializer(user, data=request.data, partial=True)
@@ -92,8 +184,25 @@ class UpdateProfileView(APIView):
 
 
 class ChangePasswordView(APIView):
+    """
+    View to change the authenticated user's password.
+    """
+
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Change password",
+        operation_description="This endpoint allows authenticated users to change their password.",
+        tags=["User Processes"],
+        request_body=ChangePasswordSerializer,
+        responses={
+            200: openapi.Response(description="Password changed successfully"),
+            400: openapi.Response(
+                description="Bad Request - validation errors or wrong old password"
+            ),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         user = request.user
         serializer = ChangePasswordSerializer(data=request.data)
@@ -118,11 +227,44 @@ class ChangePasswordView(APIView):
 
 
 class FarmInsightAPIView(APIView):
+    """
+    View to get and create farm insights.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Get farm insights",
+        operation_description="This endpoint allows authenticated users to retrieve their farm insights.",
+        tags=["Insights"],
+        responses={
+            200: openapi.Response(
+                description="List of farm insights",
+                schema=FarmInsightSerializer(many=True),
+            ),
+            401: "Unauthorized",
+        },
+    )
     def get(self, request):
         insights = Insight.objects.filter(user=request.user)
         serializer = FarmInsightSerializer(insights, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Create farm insight",
+        operation_description="This endpoint allows an admin to create a new farm insight.",
+        tags=["Insights"],
+        request_body=FarmInsightSerializer,
+        responses={
+            201: openapi.Response(
+                description="Farm insight created successfully",
+                schema=FarmInsightSerializer,
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            404: openapi.Response(description="User not found"),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         permission_classes = [IsAdminUser]
         user_id = request.data.get("user_id")
@@ -141,6 +283,21 @@ class FarmInsightAPIView(APIView):
 
 
 class FarmInsightDetailAPIView(APIView):
+    """
+    View to retrieve, update and delete specific farm insights.
+    """
+
+    @swagger_auto_schema(
+        operation_summary="Get specific farm insight",
+        operation_description="This endpoint allows users to retrieve a specific farm insight by its ID.",
+        tags=["Insights"],
+        responses={
+            200: openapi.Response(
+                description="Farm insight details", schema=FarmInsightSerializer
+            ),
+            404: openapi.Response(description="Farm insight not found"),
+        },
+    )
     def get_object(self, pk):
         try:
             return Insight.objects.get(pk=pk)
@@ -154,6 +311,20 @@ class FarmInsightDetailAPIView(APIView):
         serializer = FarmInsightSerializer(insight)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Update specific farm insight",
+        operation_description="This endpoint allows an admin to update a specific farm insight by its ID.",
+        tags=["Insights"],
+        request_body=FarmInsightSerializer,
+        responses={
+            200: openapi.Response(
+                description="Farm insight updated successfully",
+                schema=FarmInsightSerializer,
+            ),
+            404: openapi.Response(description="Farm insight not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+        },
+    )
     def put(self, request, pk):
         permission_classes = [IsAdminUser]
         insight = self.get_object(pk)
@@ -168,6 +339,15 @@ class FarmInsightDetailAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_summary="Delete specific farm insight",
+        operation_description="This endpoint allows an admin to delete a specific farm insight by its ID.",
+        tags=["Insights"],
+        responses={
+            204: openapi.Response(description="Farm insight deleted successfully"),
+            404: openapi.Response(description="Farm insight not found"),
+        },
+    )
     def delete(self, request, pk):
         permission_classes = [IsAdminUser]
         insight = self.get_object(pk)
@@ -178,11 +358,38 @@ class FarmInsightDetailAPIView(APIView):
 
 
 class ProductAPIView(APIView):
+    """
+    View to get and create products.
+    """
+
+    @swagger_auto_schema(
+        operation_summary="Get products",
+        operation_description="This endpoint allows users to retrieve a list of products.",
+        tags=["Products"],
+        responses={
+            200: openapi.Response(
+                description="List of products", schema=ProductSerializer(many=True)
+            )
+        },
+    )
     def get(self, request):
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Create product",
+        operation_description="This endpoint allows an admin to create a new product.",
+        tags=["Products"],
+        request_body=ProductSerializer,
+        responses={
+            201: openapi.Response(
+                description="Product created successfully", schema=ProductSerializer
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         permission_classes = [IsAdminUser]
         serializer = ProductSerializer(data=request.data)
@@ -193,12 +400,27 @@ class ProductAPIView(APIView):
 
 
 class ProductDetailAPIView(APIView):
+    """
+    View to retrieve, update and delete specific products.
+    """
+
     def get_object(self, pk):
         try:
             return Product.objects.get(pk=pk)
         except Product.DoesNotExist:
             return None
 
+    @swagger_auto_schema(
+        operation_summary="Get specific product",
+        operation_description="This endpoint allows users to retrieve a specific product by its ID.",
+        tags=["Products"],
+        responses={
+            200: openapi.Response(
+                description="Product details", schema=ProductSerializer
+            ),
+            404: openapi.Response(description="Product not found"),
+        },
+    )
     def get(self, request, pk):
         product = self.get_object(pk)
         if product is None:
@@ -206,6 +428,19 @@ class ProductDetailAPIView(APIView):
         serializer = ProductSerializer(product)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Update specific product",
+        operation_description="This endpoint allows an admin to update a specific product by its ID.",
+        tags=["Products"],
+        request_body=ProductSerializer,
+        responses={
+            200: openapi.Response(
+                description="Product updated successfully", schema=ProductSerializer
+            ),
+            404: openapi.Response(description="Product not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+        },
+    )
     def put(self, request, pk):
         permission_classes = [IsAdminUser]
         product = self.get_object(pk)
@@ -217,6 +452,15 @@ class ProductDetailAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_summary="Delete specific product",
+        operation_description="This endpoint allows an admin to delete a specific product by its ID.",
+        tags=["Products"],
+        responses={
+            204: openapi.Response(description="Product deleted successfully"),
+            404: openapi.Response(description="Product not found"),
+        },
+    )
     def delete(self, request, pk):
         permission_classes = [IsAdminUser]
         product = self.get_object(pk)
@@ -227,8 +471,23 @@ class ProductDetailAPIView(APIView):
 
 
 class AddToCartView(APIView):
+    """This endpoint allows users to add a product to their cart"""
+
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Add item to cart",
+        operation_description="This endpoint allows users to add a product to their cart.",
+        tags=["Cart"],
+        request_body=CartSerializer,
+        responses={
+            201: openapi.Response(
+                description="Item added to cart successfully", schema=CartSerializer
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         product_id = request.data.get("product_id")
         quantity = request.data.get("quantity", 1)
@@ -250,18 +509,81 @@ class AddToCartView(APIView):
         )
 
 
-class CartView(APIView):
-    permission_classes = [IsAuthenticated]
+class CartDetailAPIView(APIView):
+    """
+    View to retrieve, update and delete specific cart items.
+    """
 
-    def get(self, request):
-        cart = get_object_or_404(Cart, user=request.user)
-        serializer = CartSerializer(cart)
+    @swagger_auto_schema(
+        operation_summary="Get specific cart item",
+        operation_description="This endpoint allows users to retrieve a specific cart item by its ID.",
+        tags=["Cart"],
+        responses={
+            200: openapi.Response(
+                description="Cart item details", schema=CartSerializer
+            ),
+            404: openapi.Response(description="Cart item not found"),
+        },
+    )
+    def get(self, request, pk):
+        cart_item = self.get_object(pk)
+        if cart_item is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = CartSerializer(cart_item)
         return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Update specific cart item",
+        operation_description="This endpoint allows users to update a specific cart item by its ID.",
+        tags=["Cart"],
+        request_body=CartSerializer,
+        responses={
+            200: openapi.Response(
+                description="Cart item updated successfully", schema=CartSerializer
+            ),
+            404: openapi.Response(description="Cart item not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+        },
+    )
+    def put(self, request, pk):
+        cart_item = self.get_object(pk)
+        if cart_item is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = CartSerializer(cart_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete specific cart item",
+        operation_description="This endpoint allows users to delete a specific cart item by its ID.",
+        tags=["Cart"],
+        responses={
+            204: openapi.Response(description="Cart item deleted successfully"),
+            404: openapi.Response(description="Cart item not found"),
+        },
+    )
+    def delete(self, request, pk):
+        cart_item = self.get_object(pk)
+        if cart_item is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        cart_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PlaceOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Place an order",
+        operation_description="This endpoint allows a user to place an order based on the items in their cart.",
+        responses={
+            201: openapi.Response(description="Order placed successfully"),
+            400: openapi.Response(description="Bad Request - Cart is empty"),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         cart = get_object_or_404(Cart, user=request.user)
         if not cart.items.exists():
@@ -294,6 +616,16 @@ class PlaceOrderView(APIView):
 class OrderHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve order history",
+        operation_description="This endpoint allows a user to retrieve their order history.",
+        responses={
+            200: openapi.Response(
+                description="List of orders", schema=OrderSerializer(many=True)
+            ),
+            401: "Unauthorized",
+        },
+    )
     def get(self, request):
         orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
@@ -304,6 +636,16 @@ class UserAPIView(APIView):
 
     permission_classes = [IsAdminUser]
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve users",
+        operation_description="This endpoint allows an admin to retrieve all users or a specific user by ID.",
+        responses={
+            200: openapi.Response(
+                description="Admin Processes", schema=UserProfileSerializer(many=True)
+            ),
+            404: openapi.Response(description="User not found"),
+        },
+    )
     def get(self, request, pk=None):
         """Admin Processes to retrieve all users"""
         if pk:
@@ -314,6 +656,14 @@ class UserAPIView(APIView):
             serializer = UserProfileSerializer(users, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Delete a user",
+        operation_description="This endpoint allows an admin to delete a specific user by ID.",
+        responses={
+            204: openapi.Response(description="User deleted successfully"),
+            404: openapi.Response(description="User not found"),
+        },
+    )
     def delete(self, request, pk):
         """Admin Process to delete a specific user"""
         user = get_object_or_404(CustomUser, pk=pk)
@@ -324,11 +674,33 @@ class UserAPIView(APIView):
 class FarmlandAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve user's farmlands",
+        operation_description="This endpoint allows users to retrieve their farmlands.",
+        responses={
+            200: openapi.Response(
+                description="List of farmlands", schema=FarmlandSerializer(many=True)
+            ),
+            401: "Unauthorized",
+        },
+    )
     def get(self, request):
         farmlands = Farmland.objects.filter(user=request.user)
         serializer = FarmlandSerializer(farmlands, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Create farmland",
+        operation_description="This endpoint allows users to create a new farmland.",
+        request_body=FarmlandSerializer,
+        responses={
+            201: openapi.Response(
+                description="Farmland created successfully", schema=FarmlandSerializer
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         user = request.user
         print(user)
@@ -348,6 +720,16 @@ class FarmlandDetailAPIView(APIView):
         except Farmland.DoesNotExist:
             return None
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve specific farmland",
+        operation_description="This endpoint allows users to retrieve a specific farmland by its ID.",
+        responses={
+            200: openapi.Response(
+                description="Farmland details", schema=FarmlandSerializer
+            ),
+            404: openapi.Response(description="Farmland not found"),
+        },
+    )
     def get(self, request, pk):
         farmland = self.get_object(pk)
         if farmland is None:
@@ -355,6 +737,18 @@ class FarmlandDetailAPIView(APIView):
         serializer = FarmlandSerializer(farmland)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_summary="Update specific farmland",
+        operation_description="This endpoint allows users to update a specific farmland by its ID.",
+        request_body=FarmlandSerializer,
+        responses={
+            200: openapi.Response(
+                description="Farmland updated successfully", schema=FarmlandSerializer
+            ),
+            404: openapi.Response(description="Farmland not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+        },
+    )
     def put(self, request, pk):
         farmland = self.get_object(pk)
         if farmland is None:
@@ -369,10 +763,202 @@ class FarmlandDetailAPIView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_summary="Delete specific farmland",
+        operation_description="This endpoint allows users to delete a specific farmland by its ID.",
+        responses={
+            204: openapi.Response(description="Farmland deleted successfully"),
+            404: openapi.Response(description="Farmland not found"),
+        },
+    )
     def delete(self, request, pk):
         farmland = self.get_object(pk)
         if farmland is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         self.check_object_permissions(request, farmland)
         farmland.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TransactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Create a transaction",
+        operation_description="This endpoint allows users to create a new transaction.",
+        request_body=TransactionSerializer,
+        responses={
+            201: openapi.Response(
+                description="Transaction created successfully",
+                schema=TransactionSerializer,
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
+    def post(self, request):
+        serializer = TransactionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, transaction_type="manual")
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve transactions",
+        operation_description="This endpoint allows users to retrieve their transactions or a specific transaction by ID.",
+        responses={
+            200: openapi.Response(
+                description="List of transactions or transaction details",
+                schema=TransactionSerializer(many=True),
+            ),
+            404: openapi.Response(description="Transaction not found"),
+            401: "Unauthorized",
+        },
+    )
+    def get(self, request, pk=None):
+        """Retrieve a specific transaction or list all transactions for the user"""
+        if pk:
+            transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
+            serializer = TransactionSerializer(transaction)
+            return Response(serializer.data)
+        else:
+            transactions = Transaction.objects.filter(user=request.user)
+            serializer = TransactionSerializer(transactions, many=True)
+            return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Update an existing transaction",
+        operation_description="This endpoint allows users to update a specific transaction by ID.",
+        request_body=TransactionSerializer,
+        responses={
+            200: openapi.Response(
+                description="Transaction updated successfully",
+                schema=TransactionSerializer,
+            ),
+            404: openapi.Response(description="Transaction not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
+    def put(self, request, pk):
+        """Update an existing transaction"""
+        transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
+        serializer = TransactionSerializer(transaction, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a transaction",
+        operation_description="This endpoint allows users to delete a specific transaction by its ID.",
+        responses={
+            204: openapi.Response(description="Post deleted successfully"),
+            404: openapi.Response(description="Post not found"),
+            401: "Unauthorized",
+        },
+    )
+    def delete(self, request, pk):
+        """Delete an existing transaction"""
+        transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
+        transaction.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PostView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="List all posts",
+        operation_description="This endpoint allows users to retrieve all posts.",
+        responses={
+            200: openapi.Response(
+                description="List of posts", schema=PostSerializer(many=True)
+            ),
+            401: "Unauthorized",
+        },
+    )
+    def get(self, request):
+        """List all posts"""
+        posts = Post.objects.all()
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Create a new post",
+        operation_description="This endpoint allows users to create a new post.",
+        request_body=PostSerializer,
+        responses={
+            201: openapi.Response(
+                description="Post created successfully", schema=PostSerializer
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
+    def post(self, request):
+        """Create a new post"""
+        serializer = PostSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PostDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk, user):
+        return get_object_or_404(Post, pk=pk, user=user)
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve a specific post",
+        operation_description="This endpoint allows users to retrieve a specific post by its ID.",
+        responses={
+            200: openapi.Response(description="Post details", schema=PostSerializer),
+            404: openapi.Response(description="Post not found"),
+            401: "Unauthorized",
+        },
+    )
+    def get(self, request, pk):
+        """Retrieve a specific post"""
+        post = get_object_or_404(Post, pk=pk)
+        serializer = PostSerializer(post)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Update an existing post",
+        operation_description="This endpoint allows users to update a specific post by its ID.",
+        request_body=PostSerializer,
+        responses={
+            200: openapi.Response(
+                description="Post updated successfully", schema=PostSerializer
+            ),
+            404: openapi.Response(description="Post not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
+    def put(self, request, pk):
+        """Update an existing post"""
+        post = self.get_object(pk, request.user)
+        serializer = PostSerializer(post, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a post",
+        operation_description="This endpoint allows users to delete a specific post by its ID.",
+        responses={
+            204: openapi.Response(description="Post deleted successfully"),
+            404: openapi.Response(description="Post not found"),
+            401: "Unauthorized",
+        },
+    )
+    def delete(self, request, pk):
+        """Delete a post"""
+        post = self.get_object(pk, request.user)
+        post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

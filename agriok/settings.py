@@ -31,7 +31,9 @@ SECRET_KEY = "django-insecure-et01d@f83)sb&v+waeh(p@i3uvwqc+l)iwp**8o%z!mc6j^09g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["agriok - api.onrender.com"]
+ALLOWED_HOSTS = [
+    "agriok-api.onrender.com",
+]
 
 
 # Application definition

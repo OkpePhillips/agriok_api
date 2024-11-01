@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-et01d@f83)sb&v+waeh(p@i3uvwqc+l)iwp**8o%z!mc6j^09g"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "agriok-api.onrender.com",
@@ -98,7 +98,7 @@ WSGI_APPLICATION = "agriok.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.parse(
-        "postgresql://agriok_5p66_user:WEPyXVok9upVM7S7q5cdTwA5k84h98ie@dpg-csi9ql2j1k6c73apfu20-a.oregon-postgres.render.com/agriok_5p66"
+        "postgresql://agriok_64ga_user:CZu1abUKu4Gmq0z1N0UsGtK26qQXwjfW@dpg-csicusl6l47c73f8ijkg-a.oregon-postgres.render.com/agriok_64ga"
     )
 }
 

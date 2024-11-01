@@ -33,6 +33,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = [
     "agriok-api.onrender.com",
+    "http://127.0.0.1:8000/",
+    "localhost",
 ]
 
 
@@ -169,3 +171,5 @@ STATIC_URL = "/static/"
 if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+SWAGGER_SETTINGS = {"USE_SESSION_AUTH": False}

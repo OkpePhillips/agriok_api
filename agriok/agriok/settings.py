@@ -12,7 +12,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import dj_database_url
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -42,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_swagger",
     "drf_yasg",
+    "django.contrib.postgres",
 ]
 
 MIDDLEWARE = [
@@ -78,14 +84,29 @@ WSGI_APPLICATION = "agriok.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.parse(
+        "postgresql://agriok_5p66_user:WEPyXVok9upVM7S7q5cdTwA5k84h98ie@dpg-csi9ql2j1k6c73apfu20-a.oregon-postgres.render.com/agriok_5p66"
+    )
 }
 
-
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "agriok",
+#         "USER": "agriok_user",
+#         "PASSWORD": "HGtIe1SGJ4WREw0qmDJCt4QMX1CvY0Af",
+#         "HOST": "dpg-cshqphqj1k6c739dgfpg-a",
+#         "PORT": "5432",
+#     }
+# }
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 

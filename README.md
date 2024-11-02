@@ -7,6 +7,7 @@ This API is designed to support a comprehensive farming management system, allow
 
 - [Features](#features)
 - [Setup Instructions](#setup-instructions)
+- [Live API Link](#live-api-link)
 - [API Endpoints](#api-endpoints)
 - [Permissions](#permissions)
 - [Models](#models)
@@ -65,6 +66,12 @@ This API is designed to support a comprehensive farming management system, allow
    ```bash
    python manage.py runserver
    ```
+
+---
+
+### Live API LINK
+
+You can access the live api [here](https://agriok-api.onrender.com/docs/)
 
 ---
 

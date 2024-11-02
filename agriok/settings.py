@@ -52,9 +52,11 @@ INSTALLED_APPS = [
     "rest_framework_swagger",
     "drf_yasg",
     "django.contrib.postgres",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -173,3 +175,5 @@ if not DEBUG:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 SWAGGER_SETTINGS = {"USE_SESSION_AUTH": False}
+
+CORS_ALLOW_ALL_ORIGINS = True

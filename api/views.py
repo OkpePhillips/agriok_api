@@ -30,6 +30,7 @@ from .serializers import (
     FarmlandSerializer,
     TransactionSerializer,
     PostSerializer,
+    AddToCartSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
@@ -162,6 +163,15 @@ class ProfileView(APIView):
         operation_summary="Get user profile",
         operation_description="This endpoint allows authenticated users to retrieve their profile information.",
         tags=["User Processes"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="User profile details", schema=UserProfileSerializer
@@ -191,6 +201,15 @@ class UpdateProfileView(APIView):
         operation_summary="Update user profile",
         operation_description="This endpoint allows authenticated users to update their profile information.",
         tags=["User Processes"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=UserUpdateSerializer,
         responses={
             200: openapi.Response(
@@ -222,6 +241,15 @@ class ChangePasswordView(APIView):
         operation_summary="Change password",
         operation_description="This endpoint allows authenticated users to change their password.",
         tags=["User Processes"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=ChangePasswordSerializer,
         responses={
             200: openapi.Response(description="Password changed successfully"),
@@ -265,6 +293,15 @@ class FarmInsightAPIView(APIView):
         operation_summary="Get farm insights",
         operation_description="This endpoint allows authenticated users to retrieve their farm insights.",
         tags=["Insights"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="List of farm insights",
@@ -282,6 +319,15 @@ class FarmInsightAPIView(APIView):
         operation_summary="Create farm insight",
         operation_description="This endpoint allows an admin to create a new farm insight.",
         tags=["Insights"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=FarmInsightSerializer,
         responses={
             201: openapi.Response(
@@ -315,10 +361,21 @@ class FarmInsightDetailAPIView(APIView):
     View to retrieve, update and delete specific farm insights.
     """
 
+    permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(
         operation_summary="Get specific farm insight",
         operation_description="This endpoint allows users to retrieve a specific farm insight by its ID.",
         tags=["Insights"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="Farm insight details", schema=FarmInsightSerializer
@@ -343,6 +400,15 @@ class FarmInsightDetailAPIView(APIView):
         operation_summary="Update specific farm insight",
         operation_description="This endpoint allows an admin to update a specific farm insight by its ID.",
         tags=["Insights"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=FarmInsightSerializer,
         responses={
             200: openapi.Response(
@@ -371,6 +437,15 @@ class FarmInsightDetailAPIView(APIView):
         operation_summary="Delete specific farm insight",
         operation_description="This endpoint allows an admin to delete a specific farm insight by its ID.",
         tags=["Insights"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             204: openapi.Response(description="Farm insight deleted successfully"),
             404: openapi.Response(description="Farm insight not found"),
@@ -409,6 +484,15 @@ class ProductAPIView(APIView):
         operation_summary="Create product",
         operation_description="This endpoint allows an admin to create a new product.",
         tags=["Products"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=ProductSerializer,
         responses={
             201: openapi.Response(
@@ -460,6 +544,15 @@ class ProductDetailAPIView(APIView):
         operation_summary="Update specific product",
         operation_description="This endpoint allows an admin to update a specific product by its ID.",
         tags=["Products"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=ProductSerializer,
         responses={
             200: openapi.Response(
@@ -507,7 +600,16 @@ class AddToCartView(APIView):
         operation_summary="Add item to cart",
         operation_description="This endpoint allows users to add a product to their cart.",
         tags=["Cart"],
-        request_body=CartSerializer,
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        request_body=AddToCartSerializer,
         responses={
             201: openapi.Response(
                 description="Item added to cart successfully", schema=CartSerializer
@@ -542,6 +644,8 @@ class CartDetailAPIView(APIView):
     View to retrieve, update and delete specific cart items.
     """
 
+    permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(
         operation_summary="Get specific cart item",
         operation_description="This endpoint allows users to retrieve a specific cart item by its ID.",
@@ -564,6 +668,15 @@ class CartDetailAPIView(APIView):
         operation_summary="Update specific cart item",
         operation_description="This endpoint allows users to update a specific cart item by its ID.",
         tags=["Cart"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=CartSerializer,
         responses={
             200: openapi.Response(
@@ -587,6 +700,15 @@ class CartDetailAPIView(APIView):
         operation_summary="Delete specific cart item",
         operation_description="This endpoint allows users to delete a specific cart item by its ID.",
         tags=["Cart"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             204: openapi.Response(description="Cart item deleted successfully"),
             404: openapi.Response(description="Cart item not found"),
@@ -606,6 +728,15 @@ class PlaceOrderView(APIView):
     @swagger_auto_schema(
         operation_summary="Place an order",
         operation_description="This endpoint allows a user to place an order based on the items in their cart.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             201: openapi.Response(description="Order placed successfully"),
             400: openapi.Response(description="Bad Request - Cart is empty"),
@@ -647,6 +778,15 @@ class OrderHistoryView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve order history",
         operation_description="This endpoint allows a user to retrieve their order history.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="List of orders", schema=OrderSerializer(many=True)
@@ -667,6 +807,16 @@ class UserAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve users",
         operation_description="This endpoint allows an admin to retrieve all users or a specific user by ID.",
+        tags=["Admin Processes"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="Admin Processes", schema=UserProfileSerializer(many=True)
@@ -686,7 +836,17 @@ class UserAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="Delete a user",
+        tags=["Admin Processes"],
         operation_description="This endpoint allows an admin to delete a specific user by ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             204: openapi.Response(description="User deleted successfully"),
             404: openapi.Response(description="User not found"),
@@ -705,6 +865,15 @@ class FarmlandAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve user's farmlands",
         operation_description="This endpoint allows users to retrieve their farmlands.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="List of farmlands", schema=FarmlandSerializer(many=True)
@@ -720,6 +889,15 @@ class FarmlandAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="Create farmland",
         operation_description="This endpoint allows users to create a new farmland.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=FarmlandSerializer,
         responses={
             201: openapi.Response(
@@ -751,6 +929,15 @@ class FarmlandDetailAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve specific farmland",
         operation_description="This endpoint allows users to retrieve a specific farmland by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="Farmland details", schema=FarmlandSerializer
@@ -768,6 +955,15 @@ class FarmlandDetailAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="Update specific farmland",
         operation_description="This endpoint allows users to update a specific farmland by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=FarmlandSerializer,
         responses={
             200: openapi.Response(
@@ -794,6 +990,15 @@ class FarmlandDetailAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="Delete specific farmland",
         operation_description="This endpoint allows users to delete a specific farmland by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             204: openapi.Response(description="Farmland deleted successfully"),
             404: openapi.Response(description="Farmland not found"),
@@ -814,6 +1019,15 @@ class TransactionView(APIView):
     @swagger_auto_schema(
         operation_summary="Create a transaction",
         operation_description="This endpoint allows users to create a new transaction.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=TransactionSerializer,
         responses={
             201: openapi.Response(
@@ -834,6 +1048,15 @@ class TransactionView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve transactions",
         operation_description="This endpoint allows users to retrieve their transactions or a specific transaction by ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="List of transactions or transaction details",
@@ -857,6 +1080,15 @@ class TransactionView(APIView):
     @swagger_auto_schema(
         operation_summary="Update an existing transaction",
         operation_description="This endpoint allows users to update a specific transaction by ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=TransactionSerializer,
         responses={
             200: openapi.Response(
@@ -899,6 +1131,15 @@ class PostView(APIView):
     @swagger_auto_schema(
         operation_summary="List all posts",
         operation_description="This endpoint allows users to retrieve all posts.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="List of posts", schema=PostSerializer(many=True)
@@ -915,6 +1156,15 @@ class PostView(APIView):
     @swagger_auto_schema(
         operation_summary="Create a new post",
         operation_description="This endpoint allows users to create a new post.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=PostSerializer,
         responses={
             201: openapi.Response(
@@ -942,6 +1192,15 @@ class PostDetailView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve a specific post",
         operation_description="This endpoint allows users to retrieve a specific post by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(description="Post details", schema=PostSerializer),
             404: openapi.Response(description="Post not found"),
@@ -957,6 +1216,15 @@ class PostDetailView(APIView):
     @swagger_auto_schema(
         operation_summary="Update an existing post",
         operation_description="This endpoint allows users to update a specific post by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         request_body=PostSerializer,
         responses={
             200: openapi.Response(
@@ -979,6 +1247,15 @@ class PostDetailView(APIView):
     @swagger_auto_schema(
         operation_summary="Delete a post",
         operation_description="This endpoint allows users to delete a specific post by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             204: openapi.Response(description="Post deleted successfully"),
             404: openapi.Response(description="Post not found"),

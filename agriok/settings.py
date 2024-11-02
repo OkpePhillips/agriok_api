@@ -35,6 +35,7 @@ ALLOWED_HOSTS = [
     "agriok-api.onrender.com",
     "http://127.0.0.1:8000/",
     "localhost",
+    "127.0.0.1",
 ]
 
 

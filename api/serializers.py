@@ -112,6 +112,22 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class AddToCartSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
+
+    def validate_product_id(self, value):
+        # Check if the product exists
+        if not Product.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Product does not exist.")
+        return value
+
+    def validate_quantity(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Quantity must be at least 1.")
+        return value
+
+
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
 

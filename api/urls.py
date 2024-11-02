@@ -18,12 +18,14 @@ from .views import (
     FarmlandAPIView,
     FarmlandDetailAPIView,
     TransactionView,
+    LogoutView,
 )
 
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", EmailLoginView.as_view(), name="login"),
+    path("logout/", LogoutView.as_view(), name="logout"),
     path("insights/", FarmInsightAPIView.as_view(), name="farm-insights"),
     path(
         "insights/<int:pk>/",

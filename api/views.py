@@ -110,7 +110,13 @@ class EmailLoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data["user"]
             refresh = RefreshToken.for_user(user)
-            response = Response({"user_id": user.id}, status=status.HTTP_201_CREATED)
+            response = Response(
+                {
+                    "user_id": user.id,
+                    "first_name": user.first_name,
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
             # Set the access token in the cookie
             response.set_cookie(
@@ -121,6 +127,28 @@ class EmailLoginView(APIView):
             )
             return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(APIView):
+    """
+    View for user logout.
+    """
+
+    @swagger_auto_schema(
+        operation_summary="User Logout",
+        operation_description="This endpoint logs out a user by clearing the access token.",
+        tags=["User Processes"],
+        responses={
+            200: openapi.Response(
+                description="Logout successful",
+                examples={"application/json": {"detail": "Logout successful"}},
+            ),
+        },
+    )
+    def post(self, request):
+        response = Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
+        response.delete_cookie("access_token")
+        return response
 
 
 class ProfileView(APIView):

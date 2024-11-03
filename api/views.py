@@ -116,6 +116,7 @@ class EmailLoginView(APIView):
                     "user_id": user.id,
                     "first_name": user.first_name,
                     "access_token": str(refresh.access_token),
+                    "isAdmin": user.isAdmin,
                 },
                 status=status.HTTP_201_CREATED,
             )

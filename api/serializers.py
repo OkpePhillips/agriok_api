@@ -73,7 +73,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "phone_number",
             "postal_code",
             "is_active",
-            "is_staff",
+            "isAdmin",
         ]
 
 

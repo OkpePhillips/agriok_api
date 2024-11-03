@@ -28,7 +28,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-et01d@f83)sb&v+waeh(p@i3uvwqc+l)iwp**8o%z!mc6j^09g"
 
-APPEND_SLASH = True
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -178,16 +177,16 @@ if not DEBUG:
 
 SWAGGER_SETTINGS = {"USE_SESSION_AUTH": False}
 
-# CORS_ALLOWED_ORIGINS = [
-#     "https://agri-ok.vercel.app/",
-#     "http://localhost:5173/",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://agri-ok.vercel.app",
+    "http://localhost:5173",
+]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    "Authorization",
-    "access_token",
-]
+# CORS_ALLOW_HEADERS = list(default_headers) + [
+#     "Authorization",
+#     "access_token",
+# ]

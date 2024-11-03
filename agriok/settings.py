@@ -15,7 +15,7 @@ from datetime import timedelta
 import dj_database_url
 from dotenv import load_dotenv
 import os
-
+from corsheaders.defaults import default_headers
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -179,6 +179,11 @@ SWAGGER_SETTINGS = {"USE_SESSION_AUTH": False}
 
 CORS_ALLOWED_ORIGINS = [
     "https://agri-ok.vercel.app/",
-    "http://localhost:5173",
+    "http://localhost:5173/",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "Authorization",
+    "access_token",
+]

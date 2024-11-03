@@ -177,4 +177,7 @@ if not DEBUG:
 
 SWAGGER_SETTINGS = {"USE_SESSION_AUTH": False}
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://agri-ok.vercel.app/",
+    "http://localhost:5173",
+]

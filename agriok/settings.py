@@ -33,7 +33,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "agriok-api.onrender.com",
-    "http://127.0.0.1:8000/",
+    "http://127.0.0.1:8000",
     "localhost",
     "127.0.0.1",
 ]
@@ -105,16 +105,7 @@ DATABASES = {
     )
 }
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": "agriok",
-#         "USER": "agriok_user",
-#         "PASSWORD": "HGtIe1SGJ4WREw0qmDJCt4QMX1CvY0Af",
-#         "HOST": "dpg-cshqphqj1k6c739dgfpg-a",
-#         "PORT": "5432",
-#     }
-# }
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -182,11 +173,5 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
-# CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
-
-# CORS_ALLOW_HEADERS = list(default_headers) + [
-#     "Authorization",
-#     "access_token",
-# ]

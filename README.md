@@ -71,7 +71,7 @@ This API is designed to support a comprehensive farming management system, allow
 
 ### Live API LINK
 
-You can access the live api [here](https://agriok-api.onrender.com/docs/)
+You can access the live api [here](https://agriok-api.onrender.com/docs)
 
 ---
 

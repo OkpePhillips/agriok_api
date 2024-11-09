@@ -209,3 +209,4 @@ class MTNMomoPaymentSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)
     tx_ref = serializers.CharField(max_length=100)
     currency = serializers.CharField(max_length=3, default="RWF")
+    order_id = serializers.IntegerField()

@@ -482,21 +482,6 @@ class ProductAPIView(APIView):
     parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
-        operation_summary="Get products",
-        operation_description="This endpoint allows users to retrieve a list of products.",
-        tags=["Products"],
-        responses={
-            200: openapi.Response(
-                description="List of products", schema=ProductSerializer(many=True)
-            )
-        },
-    )
-    def get(self, request):
-        products = Product.objects.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
         operation_summary="Create product",
         operation_description="This endpoint allows an admin to create a new product.",
         tags=["Products"],
@@ -1340,6 +1325,28 @@ class MTNMomoPaymentView(APIView):
     View to handle payments via MTN MoMo.
     """
 
+    @swagger_auto_schema(
+        operation_summary="Make payment with MTN MOMO RWANDA",
+        operation_description="This endpoint allows users to make payment for orders with MTN MOMO.",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        request_body=MTNMomoPaymentSerializer,
+        responses={
+            200: openapi.Response(
+                description="Post updated successfully", schema=PostSerializer
+            ),
+            404: openapi.Response(description="Post not found"),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
     def post(self, request):
         serializer = MTNMomoPaymentSerializer(data=request.data)
         if serializer.is_valid():
@@ -1360,7 +1367,7 @@ class MTNMomoPaymentView(APIView):
                     amount=amount,
                     status="Pending",
                 )
-
+                print("Payment created successfully:", payment)
                 # Charge the mobile money payment
                 response = rave.MobileMoney.charge(
                     {
@@ -1372,7 +1379,7 @@ class MTNMomoPaymentView(APIView):
                         "redirect_url": "https://agri-ok.vercel.app/",  # Redirect after payment
                     }
                 )
-
+                print(response)
                 # Update payment and order status if transaction is complete
                 if response.get("transactionComplete"):
                     payment.complete_payment()
@@ -1426,3 +1433,22 @@ class VerifyPaymentView(APIView):
 
         except RaveExceptions.TransactionVerificationError as e:
             return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetProductView(APIView):
+    """Retrieve all products. Authentication not needed"""
+
+    @swagger_auto_schema(
+        operation_summary="Retieve all products from database",
+        operation_description="This endpoint allows users to retrieve a list of products.",
+        tags=["Products"],
+        responses={
+            200: openapi.Response(
+                description="List of products", schema=ProductSerializer(many=True)
+            )
+        },
+    )
+    def get(self, request):
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)

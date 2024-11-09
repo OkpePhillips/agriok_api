@@ -21,6 +21,7 @@ from .views import (
     LogoutView,
     MTNMomoPaymentView,
     VerifyPaymentView,
+    GetProductView,
 )
 
 
@@ -34,7 +35,8 @@ urlpatterns = [
         FarmInsightDetailAPIView.as_view(),
         name="farm-insight-detail",
     ),
-    path("products", ProductAPIView.as_view(), name="products"),
+    path("products/create", ProductAPIView.as_view(), name="create-products"),
+    path("products", GetProductView.as_view(), name="products"),
     path("products/<int:pk>", ProductDetailAPIView.as_view(), name="product-detail"),
     path("profile", ProfileView.as_view(), name="profile"),
     path("profile/update", UpdateProfileView.as_view(), name="update-profile"),
@@ -54,6 +56,6 @@ urlpatterns = [
     path(
         "transactions/<uuid:pk>", TransactionView.as_view(), name="transaction-detail"
     ),
-    path("api/payment", MTNMomoPaymentView.as_view(), name="mtn_momo_payment"),
-    path("api/verify-payment", VerifyPaymentView.as_view(), name="verify_payment"),
+    path("payment", MTNMomoPaymentView.as_view(), name="mtn_momo_payment"),
+    path("verify-payment", VerifyPaymentView.as_view(), name="verify_payment"),
 ]

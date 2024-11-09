@@ -517,6 +517,32 @@ class ProductAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, pk):
+        product = self.get_object(pk)
+        if product is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = ProductSerializer(product, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete specific product",
+        operation_description="This endpoint allows an admin to delete a specific product by its ID.",
+        tags=["Products"],
+        responses={
+            204: openapi.Response(description="Product deleted successfully"),
+            404: openapi.Response(description="Product not found"),
+        },
+    )
+    def delete(self, request, pk):
+        product = self.get_object(pk)
+        if product is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class ProductDetailAPIView(APIView):
     """
@@ -546,56 +572,6 @@ class ProductDetailAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = ProductSerializer(product)
         return Response(serializer.data)
-
-    @swagger_auto_schema(
-        operation_summary="Update specific product",
-        operation_description="This endpoint allows an admin to update a specific product by its ID.",
-        tags=["Products"],
-        manual_parameters=[
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Access Token",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
-        request_body=ProductSerializer,
-        responses={
-            200: openapi.Response(
-                description="Product updated successfully", schema=ProductSerializer
-            ),
-            404: openapi.Response(description="Product not found"),
-            400: openapi.Response(description="Bad Request - validation errors"),
-        },
-    )
-    def put(self, request, pk):
-        permission_classes = [IsAdminUser]
-        product = self.get_object(pk)
-        if product is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = ProductSerializer(product, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @swagger_auto_schema(
-        operation_summary="Delete specific product",
-        operation_description="This endpoint allows an admin to delete a specific product by its ID.",
-        tags=["Products"],
-        responses={
-            204: openapi.Response(description="Product deleted successfully"),
-            404: openapi.Response(description="Product not found"),
-        },
-    )
-    def delete(self, request, pk):
-        permission_classes = [IsAdminUser]
-        product = self.get_object(pk)
-        if product is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AddToCartView(APIView):
@@ -648,14 +624,20 @@ class AddToCartView(APIView):
 
 class CartDetailAPIView(APIView):
     """
-    View to retrieve, update and delete specific cart items.
+    View to retrieve, update and delete specific cart by id.
     """
 
     permission_classes = [IsAuthenticated]
 
+    def get_object(self, pk):
+        try:
+            return Insight.objects.get(pk=pk)
+        except Insight.DoesNotExist:
+            return None
+
     @swagger_auto_schema(
         operation_summary="Get specific cart item",
-        operation_description="This endpoint allows users to retrieve a specific cart item by its ID.",
+        operation_description="This endpoint allows users to retrieve a specific cart by its ID.",
         tags=["Cart"],
         manual_parameters=[
             openapi.Parameter(
@@ -673,7 +655,7 @@ class CartDetailAPIView(APIView):
             404: openapi.Response(description="Cart item not found"),
         },
     )
-    def get(self, request, pk):
+    def get(self, pk):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -681,43 +663,8 @@ class CartDetailAPIView(APIView):
         return Response(serializer.data)
 
     @swagger_auto_schema(
-        operation_summary="Get all cart items for logged-in user",
-        operation_description="This endpoint retrieves all cart items for the logged-in user.",
-        tags=["Cart"],
-        manual_parameters=[
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Access Token",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
-        responses={
-            200: openapi.Response(
-                description="List of cart items for the user",
-                schema=CartSerializer(many=True),
-            ),
-            401: openapi.Response(description="Unauthorized - user not logged in"),
-        },
-    )
-    def get(self, request):
-        self.permission_classes = [IsAuthenticated]
-
-        cart_items = Cart.objects.filter(user=request.user)
-
-        if not cart_items.exists():
-            return Response(
-                {"detail": "No cart items found for this user"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        serializer = CartSerializer(cart_items, many=True)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(
         operation_summary="Update specific cart item",
-        operation_description="This endpoint allows users to update a specific cart item by its ID.",
+        operation_description="This endpoint allows users to update a specific cart by its ID.",
         tags=["Cart"],
         manual_parameters=[
             openapi.Parameter(
@@ -749,7 +696,7 @@ class CartDetailAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="Delete specific cart item",
-        operation_description="This endpoint allows users to delete a specific cart item by its ID.",
+        operation_description="This endpoint allows users to delete a specific cart by its ID.",
         tags=["Cart"],
         manual_parameters=[
             openapi.Parameter(
@@ -765,12 +712,87 @@ class CartDetailAPIView(APIView):
             404: openapi.Response(description="Cart item not found"),
         },
     )
-    def delete(self, request, pk):
+    def delete(self, pk):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CartsAPIView(APIView):
+    """
+    View to retrieve, update and clear carts.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Get all cart items for logged-in user",
+        operation_description="This endpoint retrieves all cart items for the logged-in user.",
+        tags=["Cart"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of cart items for the user",
+                schema=CartSerializer(many=True),
+            ),
+            401: openapi.Response(description="Unauthorized - user not logged in"),
+        },
+    )
+    def get(self, request):
+        cart_items = Cart.objects.filter(user=request.user)
+
+        if not cart_items.exists():
+            return Response(
+                {"detail": "No cart items found for this user"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = CartSerializer(cart_items, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Clear cart for logged-in user",
+        operation_description="This endpoint clears the cart of the logged-in user.",
+        tags=["Cart"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Clear cart of the logged in user",
+                schema=CartSerializer(many=True),
+            ),
+            401: openapi.Response(description="Unauthorized - user not logged in"),
+        },
+    )
+    def delete(self, request):
+        user_cart = Cart.objects.filter(user=request.user)
+
+        if user_cart.exists():
+            user_cart.delete()
+            return Response(
+                {"message": "Cart cleared successfully."},
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        return Response(
+            {"message": "Your cart is empty."}, status=status.HTTP_404_NOT_FOUND
+        )
 
 
 class PlaceOrderView(APIView):
@@ -875,7 +897,7 @@ class UserAPIView(APIView):
             404: openapi.Response(description="User not found"),
         },
     )
-    def get(self, request, pk=None):
+    def get(self, pk=None):
         """Admin Processes to retrieve all users"""
         if pk:
             user = get_object_or_404(CustomUser, pk=pk)
@@ -903,7 +925,7 @@ class UserAPIView(APIView):
             404: openapi.Response(description="User not found"),
         },
     )
-    def delete(self, request, pk):
+    def delete(self, pk):
         """Admin Process to delete a specific user"""
         user = get_object_or_404(CustomUser, pk=pk)
         user.delete()
@@ -960,7 +982,6 @@ class FarmlandAPIView(APIView):
     )
     def post(self, request):
         user = request.user
-        print(user)
         serializer = FarmlandSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=user)
@@ -996,7 +1017,7 @@ class FarmlandDetailAPIView(APIView):
             404: openapi.Response(description="Farmland not found"),
         },
     )
-    def get(self, request, pk):
+    def get(self, pk):
         farmland = self.get_object(pk)
         if farmland is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -1198,7 +1219,7 @@ class PostView(APIView):
             401: "Unauthorized",
         },
     )
-    def get(self, request):
+    def get(self):
         """List all posts"""
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
@@ -1258,7 +1279,7 @@ class PostDetailView(APIView):
             401: "Unauthorized",
         },
     )
-    def get(self, request, pk):
+    def get(self, pk):
         """Retrieve a specific post"""
         post = get_object_or_404(Post, pk=pk)
         serializer = PostSerializer(post)
@@ -1448,7 +1469,7 @@ class GetProductView(APIView):
             )
         },
     )
-    def get(self, request):
+    def get(self):
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)

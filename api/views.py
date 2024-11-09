@@ -536,7 +536,7 @@ class ProductAPIView(APIView):
             404: openapi.Response(description="Product not found"),
         },
     )
-    def delete(self, request, pk):
+    def delete(self, pk):
         product = self.get_object(pk)
         if product is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -655,7 +655,7 @@ class CartDetailAPIView(APIView):
             404: openapi.Response(description="Cart item not found"),
         },
     )
-    def get(self, pk):
+    def get(self, request, pk):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -712,7 +712,7 @@ class CartDetailAPIView(APIView):
             404: openapi.Response(description="Cart item not found"),
         },
     )
-    def delete(self, pk):
+    def delete(self, request, pk):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -897,7 +897,7 @@ class UserAPIView(APIView):
             404: openapi.Response(description="User not found"),
         },
     )
-    def get(self, pk=None):
+    def get(self, request, pk=None):
         """Admin Processes to retrieve all users"""
         if pk:
             user = get_object_or_404(CustomUser, pk=pk)
@@ -925,7 +925,7 @@ class UserAPIView(APIView):
             404: openapi.Response(description="User not found"),
         },
     )
-    def delete(self, pk):
+    def delete(self, request, pk):
         """Admin Process to delete a specific user"""
         user = get_object_or_404(CustomUser, pk=pk)
         user.delete()
@@ -1017,7 +1017,7 @@ class FarmlandDetailAPIView(APIView):
             404: openapi.Response(description="Farmland not found"),
         },
     )
-    def get(self, pk):
+    def get(self, request, pk):
         farmland = self.get_object(pk)
         if farmland is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -1279,7 +1279,7 @@ class PostDetailView(APIView):
             401: "Unauthorized",
         },
     )
-    def get(self, pk):
+    def get(self, request, pk):
         """Retrieve a specific post"""
         post = get_object_or_404(Post, pk=pk)
         serializer = PostSerializer(post)
@@ -1469,7 +1469,7 @@ class GetProductView(APIView):
             )
         },
     )
-    def get(self):
+    def get(self, request):
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)

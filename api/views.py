@@ -672,6 +672,15 @@ class CartDetailAPIView(APIView):
         operation_summary="Get specific cart item",
         operation_description="This endpoint allows users to retrieve a specific cart item by its ID.",
         tags=["Cart"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response(
                 description="Cart item details", schema=CartSerializer
@@ -684,6 +693,41 @@ class CartDetailAPIView(APIView):
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = CartSerializer(cart_item)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Get all cart items for logged-in user",
+        operation_description="This endpoint retrieves all cart items for the logged-in user.",
+        tags=["Cart"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of cart items for the user",
+                schema=CartSerializer(many=True),
+            ),
+            401: openapi.Response(description="Unauthorized - user not logged in"),
+        },
+    )
+    def get(self, request):
+        self.permission_classes = [IsAuthenticated]
+
+        cart_items = Cart.objects.filter(user=request.user)
+
+        if not cart_items.exists():
+            return Response(
+                {"detail": "No cart items found for this user"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = CartSerializer(cart_items, many=True)
         return Response(serializer.data)
 
     @swagger_auto_schema(

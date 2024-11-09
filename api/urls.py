@@ -42,6 +42,7 @@ urlpatterns = [
         "profile/change-password", ChangePasswordView.as_view(), name="change-password"
     ),
     path("cart/<int:pk>", CartDetailAPIView.as_view(), name="cart"),
+    path("cart", CartDetailAPIView.as_view(), name="Get-cart"),
     path("cart/add", AddToCartView.as_view(), name="add-to-cart"),
     path("order/place", PlaceOrderView.as_view(), name="place-order"),
     path("order/history", OrderHistoryView.as_view(), name="order-history"),

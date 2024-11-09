@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.conf import settings
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import (
     Product,
@@ -41,6 +41,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.http import JsonResponse
 from rave_python import Rave, RaveExceptions
+from django.core.cache import cache
 
 
 rave = Rave(
@@ -159,10 +160,28 @@ class LogoutView(APIView):
             ),
         },
     )
+    # def post(self, request):
+    #     response = Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
+    #     response.delete_cookie("access_token")
+    #     return response
+
     def post(self, request):
-        response = Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
-        response.delete_cookie("access_token")
-        return response
+        access_token_str = request.COOKIES.get("access_token") or request.data.get(
+            "access_token"
+        )
+
+        try:
+            refresh_token = RefreshToken(access_token_str)
+            refresh_token.blacklist()
+
+            response = Response(
+                {"detail": "Logout successful."}, status=status.HTTP_200_OK
+            )
+            response.delete_cookie("access_token")
+            return response
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileView(APIView):
@@ -300,7 +319,10 @@ class FarmInsightAPIView(APIView):
     View to get and create farm insights.
     """
 
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
 
     @swagger_auto_schema(
         operation_summary="Get farm insights",
@@ -353,7 +375,6 @@ class FarmInsightAPIView(APIView):
         },
     )
     def post(self, request):
-        permission_classes = [IsAdminUser]
         user_id = request.data.get("user_id")
         try:
             user = CustomUser.objects.get(id=user_id)
@@ -374,7 +395,10 @@ class FarmInsightDetailAPIView(APIView):
     View to retrieve, update and delete specific farm insights.
     """
 
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
 
     @swagger_auto_schema(
         operation_summary="Get specific farm insight",
@@ -433,7 +457,6 @@ class FarmInsightDetailAPIView(APIView):
         },
     )
     def put(self, request, pk):
-        permission_classes = [IsAdminUser]
         insight = self.get_object(pk)
         if insight is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -465,7 +488,6 @@ class FarmInsightDetailAPIView(APIView):
         },
     )
     def delete(self, request, pk):
-        permission_classes = [IsAdminUser]
         insight = self.get_object(pk)
         if insight is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -517,6 +539,72 @@ class ProductAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ProductDetailAPIView(APIView):
+    """
+    View to retrieve, update and delete specific products.
+    """
+
+    parser_classes = (FormParser, MultiPartParser)
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAdminUser()]
+
+    def get_object(self, pk):
+        try:
+            return Product.objects.get(pk=pk)
+        except Product.DoesNotExist:
+            return None
+
+    @swagger_auto_schema(
+        operation_summary="Get specific product",
+        operation_description="This endpoint allows users to retrieve a specific product by its ID.",
+        tags=["Products"],
+        responses={
+            200: openapi.Response(
+                description="Product details", schema=ProductSerializer
+            ),
+            404: openapi.Response(description="Product not found"),
+        },
+    )
+    def get(self, request, pk):
+        product = self.get_object(pk)
+        if product is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = ProductSerializer(product)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Edit product",
+        operation_description="This endpoint allows an admin to edit a product.",
+        tags=["Products"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "photo",
+                openapi.IN_FORM,
+                description="Product image",
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+        ],
+        request_body=ProductSerializer,
+        responses={
+            201: openapi.Response(
+                description="Product created successfully", schema=ProductSerializer
+            ),
+            400: openapi.Response(description="Bad Request - validation errors"),
+            401: "Unauthorized",
+        },
+    )
     def put(self, request, pk):
         product = self.get_object(pk)
         if product is None:
@@ -542,36 +630,6 @@ class ProductAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ProductDetailAPIView(APIView):
-    """
-    View to retrieve, update and delete specific products.
-    """
-
-    def get_object(self, pk):
-        try:
-            return Product.objects.get(pk=pk)
-        except Product.DoesNotExist:
-            return None
-
-    @swagger_auto_schema(
-        operation_summary="Get specific product",
-        operation_description="This endpoint allows users to retrieve a specific product by its ID.",
-        tags=["Products"],
-        responses={
-            200: openapi.Response(
-                description="Product details", schema=ProductSerializer
-            ),
-            404: openapi.Response(description="Product not found"),
-        },
-    )
-    def get(self, request, pk):
-        product = self.get_object(pk)
-        if product is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = ProductSerializer(product)
-        return Response(serializer.data)
 
 
 class AddToCartView(APIView):

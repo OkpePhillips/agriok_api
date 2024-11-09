@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "cloudinary",
     "cloudinary_storage",
+    "django_rest_passwordreset",
 ]
 
 MIDDLEWARE = [
@@ -176,3 +177,16 @@ CLOUDINARY_STORAGE = {
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+API_BASE_URL = "https://agriok-api.onrender.com"
+DEFAULT_FROM_EMAIL = "AgriOk"
+
+
+# Email configuration
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True

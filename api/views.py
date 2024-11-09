@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-import requests
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.conf import settings
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -478,6 +478,9 @@ class ProductAPIView(APIView):
     View to get and create products.
     """
 
+    permission_classes = [IsAdminUser]
+    parser_classes = (FormParser, MultiPartParser)
+
     @swagger_auto_schema(
         operation_summary="Get products",
         operation_description="This endpoint allows users to retrieve a list of products.",
@@ -504,7 +507,14 @@ class ProductAPIView(APIView):
                 description="Access Token",
                 type=openapi.TYPE_STRING,
                 required=True,
-            )
+            ),
+            openapi.Parameter(
+                "photo",
+                openapi.IN_FORM,
+                description="Product image",
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
         ],
         request_body=ProductSerializer,
         responses={
@@ -516,7 +526,6 @@ class ProductAPIView(APIView):
         },
     )
     def post(self, request):
-        permission_classes = [IsAdminUser]
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

@@ -107,6 +107,8 @@ class FarmInsightSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    photo = serializers.ImageField(required=False)
+
     class Meta:
         model = Product
         fields = "__all__"

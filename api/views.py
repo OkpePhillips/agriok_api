@@ -16,6 +16,7 @@ from .models import (
     Farmland,
     Transaction,
     Post,
+    Payment,
 )
 from .serializers import (
     RegisterSerializer,
@@ -31,12 +32,22 @@ from .serializers import (
     TransactionSerializer,
     PostSerializer,
     AddToCartSerializer,
+    MTNMomoPaymentSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.http import JsonResponse
+from rave_python import Rave, RaveExceptions
+
+
+rave = Rave(
+    "FLWPUBK_TEST-4d92baacb8c49aff4800ccefaae2a862-X",
+    "FLWSECK_TEST-7a5406d0c7a68c9b9e08d9b4ee06c27d-X",
+    usingEnv=False,
+)
 
 
 class RegisterView(APIView):
@@ -1269,3 +1280,96 @@ class PostDetailView(APIView):
         post = self.get_object(pk, request.user)
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MTNMomoPaymentView(APIView):
+    """
+    View to handle payments via MTN MoMo.
+    """
+
+    def post(self, request):
+        serializer = MTNMomoPaymentSerializer(data=request.data)
+        if serializer.is_valid():
+            amount = serializer.validated_data["amount"]
+            phone_number = serializer.validated_data["phone_number"]
+            tx_ref = serializer.validated_data["tx_ref"]
+            currency = serializer.validated_data["currency"]
+            order_id = serializer.validated_data["order_id"]
+
+            try:
+                # Retrieve the order
+                order = Order.objects.get(id=order_id)
+
+                # Create a Payment record
+                payment = Payment.objects.create(
+                    order=order,
+                    tx_ref=tx_ref,
+                    amount=amount,
+                    status="Pending",
+                )
+
+                # Charge the mobile money payment
+                response = rave.MobileMoney.charge(
+                    {
+                        "txRef": tx_ref,
+                        "amount": amount,
+                        "currency": currency,
+                        "payment_type": "mobilemoneyrwanda",
+                        "phonenumber": phone_number,
+                        "redirect_url": "https://agri-ok.vercel.app/",  # Redirect after payment
+                    }
+                )
+
+                # Update payment and order status if transaction is complete
+                if response.get("transactionComplete"):
+                    payment.complete_payment()
+                    return JsonResponse(
+                        {"message": "Payment successful! Order status updated."},
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return JsonResponse(
+                        {"message": "Transaction is pending."},
+                        status=status.HTTP_202_ACCEPTED,
+                    )
+
+            except Order.DoesNotExist:
+                return JsonResponse(
+                    {"error": "Order not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            except RaveExceptions.TransactionChargeError as e:
+                return JsonResponse(
+                    {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                )
+            except Exception as e:
+                return JsonResponse(
+                    {"error": "An error occurred."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyPaymentView(APIView):
+    def post(self, request):
+        tx_ref = request.data.get("tx_ref")
+
+        if not tx_ref:
+            return JsonResponse(
+                {"error": "tx_ref is required."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            response = rave.Transaction.verify(tx_ref)
+            if response.get("transactionComplete"):
+                return JsonResponse(
+                    {"message": "Transaction verified!"}, status=status.HTTP_200_OK
+                )
+            else:
+                return JsonResponse(
+                    {"message": "Transaction not complete."},
+                    status=status.HTTP_202_ACCEPTED,
+                )
+
+        except RaveExceptions.TransactionVerificationError as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

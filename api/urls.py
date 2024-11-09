@@ -19,6 +19,8 @@ from .views import (
     FarmlandDetailAPIView,
     TransactionView,
     LogoutView,
+    MTNMomoPaymentView,
+    VerifyPaymentView,
 )
 
 
@@ -51,4 +53,6 @@ urlpatterns = [
     path(
         "transactions/<uuid:pk>", TransactionView.as_view(), name="transaction-detail"
     ),
+    path("api/payment", MTNMomoPaymentView.as_view(), name="mtn_momo_payment"),
+    path("api/verify-payment", VerifyPaymentView.as_view(), name="verify_payment"),
 ]

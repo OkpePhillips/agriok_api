@@ -200,3 +200,10 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ["id", "title", "content", "user", "created_at", "updated_at"]
         read_only_fields = ["user", "created_at", "updated_at"]
+
+
+class MTNMomoPaymentSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    phone_number = serializers.CharField(max_length=15)
+    tx_ref = serializers.CharField(max_length=100)
+    currency = serializers.CharField(max_length=3, default="RWF")

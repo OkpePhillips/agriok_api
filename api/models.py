@@ -26,6 +26,7 @@ class CustomUserManager(BaseUserManager):
         """Create and return a superuser with all permissions."""
         extra_fields.setdefault("isAdmin", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_staff", True)
 
         if extra_fields.get("isAdmin") is not True:
             raise ValueError("Superuser must have isAdmin=True.")
@@ -46,6 +47,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     postal_code = models.CharField(max_length=15, blank=True)
     is_active = models.BooleanField(default=True)
     isAdmin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
 
     objects = CustomUserManager()
 
@@ -119,6 +121,10 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.id} by {self.user}"
 
+    def complete_order(self):
+        self.status = "completed"
+        self.save()
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)
@@ -133,11 +139,17 @@ class Payment(models.Model):
     order = models.OneToOneField(
         Order, on_delete=models.CASCADE, related_name="payment"
     )
-    payment_intent = models.CharField(max_length=100)
+    tx_ref = models.CharField(max_length=100, unique=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, default="Pending")
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def complete_payment(self):
+        self.status = "Completed"
+        self.save()
+        self.order.status = "completed"
+        self.order.save()
 
 
 class Transaction(models.Model):

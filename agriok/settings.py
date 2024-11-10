@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "cloudinary_storage",
     "django_rest_passwordreset",
     "rest_framework_simplejwt.token_blacklist",
+    "api.apps.ApiConfig",
 ]
 
 MIDDLEWARE = [
@@ -191,3 +192,11 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+
+
+INFLUXDB = {
+    "url": os.getenv("INFLUX_DB_URL"),
+    "token": os.getenv("INFLUX_DB_TOKEN"),
+    "org": os.getenv("INFLUX_DB_ORG"),
+    "bucket": os.getenv("INFLUX_DB_BUCKET"),
+}

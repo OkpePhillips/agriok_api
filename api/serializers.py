@@ -74,6 +74,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "postal_code",
             "is_active",
             "isAdmin",
+            "photo",
         ]
 
 

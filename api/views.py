@@ -58,8 +58,6 @@ class RegisterView(APIView):
     View to register a new user.
     """
 
-    parser_classes = (FormParser, MultiPartParser)
-
     @swagger_auto_schema(
         operation_summary="Register a new user",
         operation_description="This endpoint allows a new user to register by providing a first_name, last_name, username, email, and password.",
@@ -99,8 +97,6 @@ class EmailLoginView(APIView):
     """
     View for user email login.
     """
-
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="User Login",
@@ -191,7 +187,6 @@ class ProfileView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Get user profile",
@@ -266,7 +261,6 @@ class ChangePasswordView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Change password",
@@ -317,8 +311,6 @@ class FarmInsightAPIView(APIView):
     """
     View to get and create farm insights.
     """
-
-    parser_classes = (FormParser, MultiPartParser)
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -395,8 +387,6 @@ class FarmInsightDetailAPIView(APIView):
     """
     View to retrieve, update and delete specific farm insights.
     """
-
-    parser_classes = (FormParser, MultiPartParser)
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -548,8 +538,6 @@ class ProductDetailAPIView(APIView):
     View to retrieve, update and delete specific products.
     """
 
-    parser_classes = (FormParser, MultiPartParser)
-
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
@@ -648,7 +636,6 @@ class AddToCartView(APIView):
     """This endpoint allows users to add a product to their cart"""
 
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Add item to cart",
@@ -699,7 +686,6 @@ class CartDetailAPIView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     def get_object(self, pk):
         try:
@@ -799,7 +785,6 @@ class CartsAPIView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Get all cart items for logged-in user",
@@ -871,7 +856,6 @@ class CartsAPIView(APIView):
 
 class PlaceOrderView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Place an order",
@@ -924,7 +908,6 @@ class PlaceOrderView(APIView):
 
 class OrderHistoryView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Retrieve order history",
@@ -984,7 +967,6 @@ class AllOrdersView(APIView):
 class UserAPIView(APIView):
 
     permission_classes = [IsAdminUser]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Retrieve users",
@@ -1043,7 +1025,6 @@ class UserAPIView(APIView):
 
 class FarmlandAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Retrieve user's farmlands",
@@ -1101,7 +1082,6 @@ class FarmlandAPIView(APIView):
 
 class FarmlandDetailAPIView(APIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
-    parser_classes = (FormParser, MultiPartParser)
 
     def get_object(self, pk):
         try:
@@ -1198,7 +1178,6 @@ class FarmlandDetailAPIView(APIView):
 
 class TransactionView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Create a transaction",
@@ -1311,7 +1290,6 @@ class TransactionView(APIView):
 
 class PostView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="List all posts",
@@ -1370,7 +1348,6 @@ class PostView(APIView):
 
 class PostDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = (FormParser, MultiPartParser)
 
     def get_object(self, pk, user):
         return get_object_or_404(Post, pk=pk, user=user)
@@ -1459,8 +1436,6 @@ class MTNMomoPaymentView(APIView):
     """
     View to handle payments via MTN MoMo.
     """
-
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Make payment with MTN MOMO RWANDA",
@@ -1574,8 +1549,6 @@ class VerifyPaymentView(APIView):
 
 class GetProductView(APIView):
     """Retrieve all products. Authentication not needed"""
-
-    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="Retieve all products from database",

@@ -871,6 +871,7 @@ class PlaceOrderView(APIView):
     @swagger_auto_schema(
         operation_summary="Place an order",
         operation_description="This endpoint allows a user to place an order based on the items in their cart.",
+        tags=["Orders"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -921,6 +922,7 @@ class OrderHistoryView(APIView):
     @swagger_auto_schema(
         operation_summary="Retrieve order history",
         operation_description="This endpoint allows a user to retrieve their order history.",
+        tags=["Orders"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -939,6 +941,35 @@ class OrderHistoryView(APIView):
     )
     def get(self, request):
         orders = Order.objects.filter(user=request.user)
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+
+class AllOrdersView(APIView):
+    permission_classes = [IsAdminUser]
+
+    @swagger_auto_schema(
+        operation_summary="Retrieves all orders by an Admin",
+        operation_description="This endpoint allows an admin user to retrieve all orders.",
+        tags=["Orders"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of orders", schema=OrderSerializer(many=True)
+            ),
+            401: "Unauthorized",
+        },
+    )
+    def get(self, request):
+        orders = Order.objects.all()
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
@@ -1543,3 +1574,67 @@ class GetProductView(APIView):
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
+
+
+class OrderDetailAPIView(APIView):
+    """
+    View to retrieve and delete specific order by id.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return None
+
+    @swagger_auto_schema(
+        operation_summary="Get a specific order",
+        operation_description="This endpoint allows users to retrieve a specific order by its ID.",
+        tags=["Orders"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(description="Order details", schema=OrderSerializer),
+            404: openapi.Response(description="Cart item not found"),
+        },
+    )
+    def get(self, request, pk):
+        order = self.get_object(pk)
+        if order is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Delete specific order by id",
+        operation_description="This endpoint allows users to delete a specific order by its ID.",
+        tags=["Orders"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            204: openapi.Response(description="Order deleted successfully"),
+            404: openapi.Response(description="Order not found"),
+        },
+    )
+    def delete(self, request, pk):
+        order = self.get_object(pk)
+        if order is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

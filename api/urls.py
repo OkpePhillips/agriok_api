@@ -23,6 +23,8 @@ from .views import (
     VerifyPaymentView,
     GetProductView,
     CartsAPIView,
+    OrderDetailAPIView,
+    AllOrdersView,
 )
 
 
@@ -45,6 +47,8 @@ urlpatterns = [
         "profile/change-password", ChangePasswordView.as_view(), name="change-password"
     ),
     path("cart/<int:pk>", CartDetailAPIView.as_view(), name="cart"),
+    path("orders/<int:pk>", OrderDetailAPIView.as_view(), name="cart"),
+    path("orders", AllOrdersView.as_view(), name="cart"),
     path("cart", CartsAPIView.as_view(), name="Get-cart"),
     path("cart/add", AddToCartView.as_view(), name="add-to-cart"),
     path("order/place", PlaceOrderView.as_view(), name="place-order"),

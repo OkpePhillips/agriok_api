@@ -87,6 +87,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "country",
             "phone_number",
             "postal_code",
+            "photo",
         ]
 
 

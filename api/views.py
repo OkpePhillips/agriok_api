@@ -162,11 +162,6 @@ class LogoutView(APIView):
             ),
         },
     )
-    # def post(self, request):
-    #     response = Response({"detail": "Logout successful"}, status=status.HTTP_200_OK)
-    #     response.delete_cookie("access_token")
-    #     return response
-
     def post(self, request):
         access_token_str = request.COOKIES.get("access_token") or request.data.get(
             "access_token"

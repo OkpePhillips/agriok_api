@@ -49,6 +49,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     isAdmin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    photo = models.ImageField(
+        upload_to="profiles/",
+        storage=MediaCloudinaryStorage(),
+        null=True,
+        blank=True,
+    )
 
     objects = CustomUserManager()
 

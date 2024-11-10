@@ -34,6 +34,7 @@ from .serializers import (
     AddToCartSerializer,
     MTNMomoPaymentSerializer,
     CartItemSerializer,
+    CartItemUpdateSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
@@ -743,10 +744,11 @@ class CartDetailAPIView(APIView):
                 required=True,
             )
         ],
-        request_body=CartSerializer,
+        request_body=CartItemUpdateSerializer,
         responses={
             200: openapi.Response(
-                description="Cart item updated successfully", schema=CartSerializer
+                description="Cart item updated successfully",
+                schema=CartItemUpdateSerializer,
             ),
             404: openapi.Response(description="Cart item not found"),
             400: openapi.Response(description="Bad Request - validation errors"),
@@ -756,7 +758,7 @@ class CartDetailAPIView(APIView):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = CartItemSerializer(cart_item, partial=True)
+        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

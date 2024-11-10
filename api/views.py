@@ -634,7 +634,7 @@ class ProductDetailAPIView(APIView):
             404: openapi.Response(description="Product not found"),
         },
     )
-    def delete(self, pk):
+    def delete(self, request, pk):
         product = self.get_object(pk)
         if product is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -756,7 +756,7 @@ class CartDetailAPIView(APIView):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
+        serializer = CartItemSerializer(cart_item, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

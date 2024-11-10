@@ -33,6 +33,7 @@ from .serializers import (
     PostSerializer,
     AddToCartSerializer,
     MTNMomoPaymentSerializer,
+    CartItemSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
@@ -609,7 +610,7 @@ class ProductDetailAPIView(APIView):
         product = self.get_object(pk)
         if product is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = ProductSerializer(product, data=request.data)
+        serializer = ProductSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -619,6 +620,15 @@ class ProductDetailAPIView(APIView):
         operation_summary="Delete specific product",
         operation_description="This endpoint allows an admin to delete a specific product by its ID.",
         tags=["Products"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
         responses={
             204: openapi.Response(description="Product deleted successfully"),
             404: openapi.Response(description="Product not found"),
@@ -689,8 +699,8 @@ class CartDetailAPIView(APIView):
 
     def get_object(self, pk):
         try:
-            return Insight.objects.get(pk=pk)
-        except Insight.DoesNotExist:
+            return CartItem.objects.get(pk=pk)
+        except CartItem.DoesNotExist:
             return None
 
     @swagger_auto_schema(
@@ -717,7 +727,7 @@ class CartDetailAPIView(APIView):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = CartSerializer(cart_item)
+        serializer = CartItemSerializer(cart_item)
         return Response(serializer.data)
 
     @swagger_auto_schema(
@@ -746,7 +756,7 @@ class CartDetailAPIView(APIView):
         cart_item = self.get_object(pk)
         if cart_item is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = CartSerializer(cart_item, data=request.data, partial=True)
+        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

@@ -102,10 +102,14 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class FarmInsightSerializer(serializers.ModelSerializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.all(), source="user"
+    )
+
     class Meta:
         model = Insight
-        fields = ["id", "title", "content", "date_posted", "user", "farmland"]
-        read_only_fields = ["id", "date_posted", "user"]
+        fields = ["id", "title", "content", "date_posted", "user_id", "farmland"]
+        read_only_fields = ["id", "date_posted"]
 
 
 class ProductSerializer(serializers.ModelSerializer):

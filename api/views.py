@@ -17,6 +17,7 @@ from .models import (
     Transaction,
     Post,
     Payment,
+    ClientCertificate,
 )
 from .serializers import (
     RegisterSerializer,
@@ -35,6 +36,8 @@ from .serializers import (
     MTNMomoPaymentSerializer,
     CartItemSerializer,
     CartItemUpdateSerializer,
+    ClientCertificateSerializer,
+    ClientCertificateDetailSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
@@ -44,7 +47,8 @@ from drf_yasg import openapi
 from django.http import JsonResponse
 from rave_python import Rave, RaveExceptions
 from django.core.cache import cache
-
+from src.certificates import Subject, CertificateAuthority, ClientCertificateGenerator
+import os
 
 rave = Rave(
     "FLWPUBK_TEST-4d92baacb8c49aff4800ccefaae2a862-X",
@@ -1630,3 +1634,110 @@ class OrderDetailAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         order.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ClientCertificateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Create a client certificate for MQTT connection",
+        operation_description="This endpoint creates and returns a signed certificate for MQTT clients to connect to the MQTT server.",
+        tags=["Certificates"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        request_body=ClientCertificateSerializer,
+        responses={
+            201: openapi.Response(
+                description=" Certificate created successfully",
+                schema=ClientCertificateDetailSerializer,
+            ),
+            401: openapi.Response(description="Unauthorized"),
+        },
+    )
+    def post(self, request):
+        serializer = ClientCertificateSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            validated_data = serializer.validated_data
+
+            # Define the client subject
+            subject = Subject(
+                common_name=validated_data["common_name"],
+                country_name=validated_data["country_name"],
+                organization_name=validated_data["organization_name"],
+            )
+
+            common_name = subject["common_name"]
+            # Ensure the directory exists
+            output_dir = "client_certs"
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            # Load the root CA
+            ca = CertificateAuthority(
+                cert_path="root_cert/root_ca_cert.pem", key_path="root_cert/root_ca.key"
+            )
+
+            # Generate client certificate signed by the root CA
+            client_cert_gen = ClientCertificateGenerator(output_dir=output_dir)
+            client_cert = client_cert_gen.generate_signed_certificate(
+                subject, ca, common_name, f"{common_name}_cert"
+            )
+
+            # Read the generated certificate and key
+            cert_path = os.path.join(output_dir, f"{common_name}_cert.pem")
+            key_path = os.path.join(output_dir, f"{common_name}.key")
+
+            with open(cert_path, "r") as cert_file:
+                cert_data = cert_file.read()
+            with open(key_path, "r") as key_file:
+                key_data = key_file.read()
+
+            # Save to database
+            ClientCertificate.objects.create(
+                user=user,
+                common_name=common_name,
+                certificate=cert_data,
+                private_key=key_data,
+            )
+
+            return Response({"certificate": cert_data}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RetrieveUserCertificatesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Retireve a client certificate",
+        operation_description="This endpoint returns a signed certificate for the logged in user.",
+        tags=["Certificates"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            201: openapi.Response(
+                description=" Successful",
+                schema=ClientCertificateDetailSerializer,
+            ),
+            404: openapi.Response(description="Certificate not found"),
+        },
+    )
+    def get(self, request):
+        user = request.user
+        certificates = ClientCertificate.objects.filter(user=user)
+        serializer = ClientCertificateDetailSerializer(certificates, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

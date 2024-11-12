@@ -25,6 +25,8 @@ from .views import (
     CartsAPIView,
     OrderDetailAPIView,
     AllOrdersView,
+    ClientCertificateView,
+    RetrieveUserCertificatesView,
 )
 
 
@@ -63,4 +65,14 @@ urlpatterns = [
     ),
     path("payment", MTNMomoPaymentView.as_view(), name="mtn_momo_payment"),
     path("verify-payment", VerifyPaymentView.as_view(), name="verify_payment"),
+    path(
+        "certificate/create",
+        ClientCertificateView.as_view(),
+        name="generate-client-certificate",
+    ),
+    path(
+        "certificates/",
+        RetrieveUserCertificatesView.as_view(),
+        name="retrieve-user-certificates",
+    ),
 ]

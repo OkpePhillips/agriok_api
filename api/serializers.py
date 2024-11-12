@@ -11,6 +11,7 @@ from .models import (
     Farmland,
     Transaction,
     Post,
+    ClientCertificate,
 )
 from django.contrib.auth import authenticate
 from django.contrib.auth import password_validation
@@ -222,3 +223,15 @@ class MTNMomoPaymentSerializer(serializers.Serializer):
     tx_ref = serializers.CharField(max_length=100)
     currency = serializers.CharField(max_length=3, default="RWF")
     order_id = serializers.IntegerField()
+
+
+class ClientCertificateSerializer(serializers.Serializer):
+    common_name = serializers.CharField(max_length=255)
+    country_name = serializers.CharField(max_length=2)
+    organization_name = serializers.CharField(max_length=255)
+
+
+class ClientCertificateDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientCertificate
+        fields = ["common_name", "certificate", "private_key", "created_at"]

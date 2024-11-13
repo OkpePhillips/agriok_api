@@ -72,3 +72,6 @@ class MQTTClient:
         Starts a blocking loop to keep the client connected and process incoming messages indefinitely.
         """
         self.client.loop_forever()
+
+    def disconnect(self):
+        self.client.disconnect()

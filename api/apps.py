@@ -3,50 +3,65 @@ from influxdb_client import InfluxDBClient, Point
 import json
 from django.conf import settings
 import asyncio
-from src.certificates import ClientCert
-from src.mqtt import MQTTClient
 import threading
 import atexit
+from src.certificates import ClientCert
+from src.mqtt import MQTTClient
 
 
 class ApiConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "api"
-    mqtt_thread_started = threading.Event()
+    mqtt_client = None
 
     def ready(self):
         import api.signals
 
-        asyncio.run(
-            self.start_mqtt_service()
-        )  # Use asyncio.run to manage the event loop
+        atexit.register(self.shutdown)
 
-    async def start_mqtt_service(self):
-        # Initialize MQTT client with certificates
-        client_cert = ClientCert(
-            "C:/Users/Rabony Globals/Documents/gig_at_startup/backend_certs/backend_cert.pem",
-            "C:/Users/Rabony Globals/Documents/gig_at_startup/backend_certs/backend.key",
-            "C:/Users/Rabony Globals/Documents/gig_at_startup/backend_certs/root_ca_cert.pem",
-        )
+        # Start MQTT in a separate thread using asyncio properly
+        threading.Thread(target=self.start_mqtt_service, daemon=True).start()
 
-        # Initialize MQTT Client
-        mqtt_client = MQTTClient(client_cert, "test", "localhost", 8883)
+    def start_mqtt_service(self):
+        """
+        Starts the MQTT service in a new thread using an event loop.
+        """
+        loop = asyncio.new_event_loop()  # Create a new event loop for this thread
+        asyncio.set_event_loop(loop)  # Set the loop for this thread
 
-        # Register the callback to handle incoming messages
-        mqtt_client.on_message = self.save_data_to_db
+        # Running the asynchronous function in the event loop
+        loop.run_until_complete(self.run_mqtt_client())
 
-        # Try to connect to the MQTT Broker
-        try:
-            mqtt_client.connect()
-            print("Connected to MQTT Broker!")
-        except Exception as e:
-            print(f"Failed to connect: {e}")
+    async def run_mqtt_client(self):
+        """
+        This method is responsible for setting up and running the MQTT client.
+        """
+        if self.mqtt_client is None:
+            client_cert = ClientCert(
+                "C:/Users/Rabony Globals/Documents/gig_at_startup/backend_certs/backend_cert.pem",
+                "C:/Users/Rabony Globals/Documents/gig_at_startup/backend_certs/backend.key",
+                "C:/Users/Rabony Globals/Documents/gig_at_startup/backend_certs/root_ca_cert.pem",
+            )
 
-        # Subscribe to the topic
-        mqtt_client.subscribe("test/topic", self.save_data_to_db)
+            # Initialize MQTT Client
+            self.mqtt_client = MQTTClient(client_cert, "test", "localhost", 8883)
 
-        # Start the MQTT client loop
-        await asyncio.to_thread(mqtt_client.loop_forever)
+            # Register the callback to handle incoming messages
+            self.mqtt_client.on_message = self.save_data_to_db
+
+            # Try to connect to the MQTT Broker
+            try:
+                await asyncio.to_thread(self.mqtt_client.connect)
+                print("Connected to MQTT Broker!")
+            except Exception as e:
+                print(f"Failed to connect: {e}")
+                return
+
+            # Subscribe to the topic
+            self.mqtt_client.subscribe("test/topic", self.save_data_to_db)
+
+        # Start the MQTT client loop in a separate thread
+        await asyncio.to_thread(self.mqtt_client.loop_forever)
 
     def save_data_to_db(self, client, userdata, message):
         """
@@ -88,7 +103,12 @@ class ApiConfig(AppConfig):
             influx_client.close()
 
     def shutdown(self):
-        # Disconnect the MQTT client
-        if hasattr(self, "mqtt_client"):
-            self.mqtt_client.disconnect()
-            print("MQTT client disconnected")
+        """
+        Gracefully shutdown the MQTT client.
+        """
+        if self.mqtt_client:
+            try:
+                self.mqtt_client.disconnect()
+                print("MQTT client disconnected")
+            except Exception as e:
+                print(f"Error disconnecting MQTT client: {e}")

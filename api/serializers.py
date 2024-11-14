@@ -210,10 +210,18 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only_fields = ["user", "created_at", "updated_at"]
 
 
+class UserPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "photo"]
+
+
 class PostSerializer(serializers.ModelSerializer):
+    user = UserPostSerializer(read_only=True)
+
     class Meta:
         model = TrendingPost
-        fields = ["id", "title", "content", "user", "created_at", "updated_at"]
+        fields = ["id", "title", "content", "user", "image", "created_at", "updated_at"]
         read_only_fields = ["user", "created_at", "updated_at"]
 
 

@@ -3,7 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.conf import settings
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAdminUser,
+    AllowAny,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import (
     Product,
@@ -1295,21 +1300,13 @@ class TransactionView(APIView):
 
 
 class PostView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    parser_classes = (FormParser, MultiPartParser)
 
     @swagger_auto_schema(
         operation_summary="List all posts",
         operation_description="This endpoint allows users to retrieve all posts.",
         tags=["Trending Posts"],
-        manual_parameters=[
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Access Token",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
         responses={
             200: openapi.Response(
                 description="List of posts", schema=PostSerializer(many=True)
@@ -1317,7 +1314,7 @@ class PostView(APIView):
             401: "Unauthorized",
         },
     )
-    def get(self):
+    def get(self, request):
         """List all posts"""
         posts = TrendingPost.objects.all()
         serializer = PostSerializer(posts, many=True)
@@ -1347,6 +1344,11 @@ class PostView(APIView):
     )
     def post(self, request):
         """Create a new post"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
@@ -1356,6 +1358,7 @@ class PostView(APIView):
 
 class PostDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = (FormParser, MultiPartParser)
 
     def get_object(self, pk, user):
         return get_object_or_404(TrendingPost, pk=pk, user=user)
@@ -1381,7 +1384,7 @@ class PostDetailView(APIView):
     )
     def get(self, request, pk):
         """Retrieve a specific post"""
-        post = get_object_or_404(TrendingPost, pk=pk)
+        post = get_object_or_404(TrendingPost, pk=pk, user=request.user)
         serializer = PostSerializer(post)
         return Response(serializer.data)
 

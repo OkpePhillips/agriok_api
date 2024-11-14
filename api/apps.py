@@ -67,8 +67,6 @@ class ApiConfig(AppConfig):
         """
         Callback function to save incoming MQTT message data to InfluxDB.
         """
-        print("Message received!")
-        print(message.payload)
 
         # Decode and parse the message payload as JSON
         try:

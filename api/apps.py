@@ -17,10 +17,10 @@ class ApiConfig(AppConfig):
     def ready(self):
         import api.signals
 
-        atexit.register(self.shutdown)
+        # atexit.register(self.shutdown)
 
-        # Start MQTT in a separate thread using asyncio properly
-        threading.Thread(target=self.start_mqtt_service, daemon=True).start()
+        # # Start MQTT in a separate thread using asyncio properly
+        # threading.Thread(target=self.start_mqtt_service, daemon=True).start()
 
     def start_mqtt_service(self):
         """

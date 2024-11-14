@@ -10,7 +10,7 @@ from .models import (
     Product,
     Farmland,
     Transaction,
-    Post,
+    TrendingPost,
     ClientCertificate,
 )
 from django.contrib.auth import authenticate
@@ -212,7 +212,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Post
+        model = TrendingPost
         fields = ["id", "title", "content", "user", "created_at", "updated_at"]
         read_only_fields = ["user", "created_at", "updated_at"]
 

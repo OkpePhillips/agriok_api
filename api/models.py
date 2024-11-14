@@ -176,7 +176,7 @@ class Transaction(models.Model):
         return f"Transaction {self.id} by {self.user} - {self.items}"
 
 
-class Post(models.Model):
+class TrendingPost(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     user = models.ForeignKey(

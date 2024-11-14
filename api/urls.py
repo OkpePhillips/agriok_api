@@ -27,6 +27,8 @@ from .views import (
     AllOrdersView,
     ClientCertificateView,
     RetrieveUserCertificatesView,
+    PostView,
+    PostDetailView,
 )
 
 
@@ -75,4 +77,6 @@ urlpatterns = [
         RetrieveUserCertificatesView.as_view(),
         name="retrieve-user-certificates",
     ),
+    path("posts", PostView.as_view(), name="posts"),
+    path("posts/<int:pk>", PostDetailView.as_view(), name="posts"),
 ]

@@ -15,7 +15,7 @@ from .models import (
     OrderItem,
     Farmland,
     Transaction,
-    Post,
+    TrendingPost,
     Payment,
     ClientCertificate,
 )
@@ -1300,6 +1300,7 @@ class PostView(APIView):
     @swagger_auto_schema(
         operation_summary="List all posts",
         operation_description="This endpoint allows users to retrieve all posts.",
+        tags=["Trending Posts"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -1318,13 +1319,14 @@ class PostView(APIView):
     )
     def get(self):
         """List all posts"""
-        posts = Post.objects.all()
+        posts = TrendingPost.objects.all()
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Create a new post",
         operation_description="This endpoint allows users to create a new post.",
+        tags=["Trending Posts"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -1356,11 +1358,12 @@ class PostDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk, user):
-        return get_object_or_404(Post, pk=pk, user=user)
+        return get_object_or_404(TrendingPost, pk=pk, user=user)
 
     @swagger_auto_schema(
         operation_summary="Retrieve a specific post",
         operation_description="This endpoint allows users to retrieve a specific post by its ID.",
+        tags=["Trending Posts"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -1378,13 +1381,14 @@ class PostDetailView(APIView):
     )
     def get(self, request, pk):
         """Retrieve a specific post"""
-        post = get_object_or_404(Post, pk=pk)
+        post = get_object_or_404(TrendingPost, pk=pk)
         serializer = PostSerializer(post)
         return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="Update an existing post",
         operation_description="This endpoint allows users to update a specific post by its ID.",
+        tags=["Trending Posts"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -1416,6 +1420,7 @@ class PostDetailView(APIView):
     @swagger_auto_schema(
         operation_summary="Delete a post",
         operation_description="This endpoint allows users to delete a specific post by its ID.",
+        tags=["Trending Posts"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",

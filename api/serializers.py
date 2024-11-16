@@ -213,7 +213,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class UserPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "photo"]
+        fields = ["id", "first_name", "photo"]
 
 
 class PostSerializer(serializers.ModelSerializer):

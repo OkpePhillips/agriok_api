@@ -29,6 +29,8 @@ from .views import (
     RetrieveUserCertificatesView,
     PostView,
     PostDetailView,
+    UserPostView,
+    UserSpecificPost,
 )
 
 
@@ -78,5 +80,11 @@ urlpatterns = [
         name="retrieve-user-certificates",
     ),
     path("posts", PostView.as_view(), name="posts"),
-    path("posts/<int:pk>", PostDetailView.as_view(), name="posts"),
+    path("posts/user", UserPostView.as_view(), name="user posts"),
+    path(
+        "posts/user/<int:pk>",
+        UserSpecificPost.as_view(),
+        name="user-post-detail",
+    ),
+    path("posts/<int:pk>", PostDetailView.as_view(), name="post detail"),
 ]

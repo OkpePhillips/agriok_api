@@ -1357,7 +1357,7 @@ class PostView(APIView):
 
 
 class PostDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = (FormParser, MultiPartParser)
 
     def get_object(self, pk, user):
@@ -1367,15 +1367,6 @@ class PostDetailView(APIView):
         operation_summary="Retrieve a specific post",
         operation_description="This endpoint allows users to retrieve a specific post by its ID.",
         tags=["Trending Posts"],
-        manual_parameters=[
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Access Token",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
         responses={
             200: openapi.Response(description="Post details", schema=PostSerializer),
             404: openapi.Response(description="Post not found"),
@@ -1384,7 +1375,7 @@ class PostDetailView(APIView):
     )
     def get(self, request, pk):
         """Retrieve a specific post"""
-        post = get_object_or_404(TrendingPost, pk=pk, user=request.user)
+        post = get_object_or_404(TrendingPost, pk=pk)
         serializer = PostSerializer(post)
         return Response(serializer.data)
 
@@ -1413,6 +1404,11 @@ class PostDetailView(APIView):
     )
     def put(self, request, pk):
         """Update an existing post"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         post = self.get_object(pk, request.user)
         serializer = PostSerializer(post, data=request.data, partial=True)
         if serializer.is_valid():
@@ -1441,9 +1437,74 @@ class PostDetailView(APIView):
     )
     def delete(self, request, pk):
         """Delete a post"""
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         post = self.get_object(pk, request.user)
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserPostView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="List all posts of the authenticated user",
+        operation_description="This endpoint allows users to retrieve all posts.",
+        tags=["Trending Posts"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of posts", schema=PostSerializer(many=True)
+            ),
+            401: "Unauthorized",
+        },
+    )
+    def get(self, request):
+        """List the posts of an authenticated user"""
+        posts = TrendingPost.objects.filter(user=request.user)
+        serializer = PostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+
+class UserSpecificPost(APIView):
+    """Retrieve a specific post of the logged in user"""
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve a specific post of a specific user",
+        operation_description="This endpoint allows users to retrieve a post that they made.",
+        tags=["Trending Posts"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of posts", schema=PostSerializer(many=True)
+            ),
+            401: "Unauthorized",
+        },
+    )
+    def get(self, request, pk):
+        """Retrieve a specific post of a specific user"""
+        post = get_object_or_404(TrendingPost, pk=pk, user=request.user)
+        serializer = PostSerializer(post)
+        return Response(serializer.data)
 
 
 class MTNMomoPaymentView(APIView):

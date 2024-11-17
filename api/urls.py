@@ -19,8 +19,8 @@ from .views import (
     FarmlandDetailAPIView,
     TransactionView,
     LogoutView,
-    MTNMomoPaymentView,
-    VerifyPaymentView,
+    # MTNMomoPaymentView,
+    # VerifyPaymentView,
     GetProductView,
     CartsAPIView,
     OrderDetailAPIView,
@@ -31,6 +31,7 @@ from .views import (
     PostDetailView,
     UserPostView,
     UserSpecificPost,
+    MomoPaymentView,
 )
 
 
@@ -67,8 +68,6 @@ urlpatterns = [
     path(
         "transactions/<uuid:pk>", TransactionView.as_view(), name="transaction-detail"
     ),
-    path("payment", MTNMomoPaymentView.as_view(), name="mtn_momo_payment"),
-    path("verify-payment", VerifyPaymentView.as_view(), name="verify_payment"),
     path(
         "certificate/create",
         ClientCertificateView.as_view(),
@@ -87,4 +86,5 @@ urlpatterns = [
         name="user-post-detail",
     ),
     path("posts/<int:pk>", PostDetailView.as_view(), name="post detail"),
+    path("momo-payment", MomoPaymentView.as_view(), name="momo-payment"),
 ]

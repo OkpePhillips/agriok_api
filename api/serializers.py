@@ -243,3 +243,19 @@ class ClientCertificateDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientCertificate
         fields = ["common_name", "certificate", "private_key", "created_at"]
+
+
+class MomoPaymentSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    currency = serializers.ChoiceField(choices=["RWF", "EUR"])
+    external_id = serializers.CharField(max_length=100)
+    payer_party_id = serializers.RegexField(
+        regex=r"^\d+$",
+        max_length=12,
+        min_length=10,
+        error_messages={"invalid": "Enter a valid phone number."},
+    )
+    payer_message = serializers.CharField(
+        max_length=255, required=False, allow_blank=True
+    )
+    payee_note = serializers.CharField(max_length=255, required=False, allow_blank=True)

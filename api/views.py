@@ -43,6 +43,7 @@ from .serializers import (
     CartItemUpdateSerializer,
     ClientCertificateSerializer,
     ClientCertificateDetailSerializer,
+    MomoPaymentSerializer,
 )
 from .permissions import IsOwnerOrAdmin
 from django.contrib.auth import update_session_auth_hash
@@ -54,12 +55,7 @@ from rave_python import Rave, RaveExceptions
 from django.core.cache import cache
 from src.certificates import Subject, CertificateAuthority, ClientCertificateGenerator
 import os
-
-rave = Rave(
-    "FLWPUBK_TEST-4d92baacb8c49aff4800ccefaae2a862-X",
-    "FLWSECK_TEST-7a5406d0c7a68c9b9e08d9b4ee06c27d-X",
-    usingEnv=False,
-)
+from .momo import request_payment, check_payment_status
 
 
 class RegisterView(APIView):
@@ -1507,121 +1503,6 @@ class UserSpecificPost(APIView):
         return Response(serializer.data)
 
 
-class MTNMomoPaymentView(APIView):
-    """
-    View to handle payments via MTN MoMo.
-    """
-
-    @swagger_auto_schema(
-        operation_summary="Make payment with MTN MOMO RWANDA",
-        operation_description="This endpoint allows users to make payment for orders with MTN MOMO.",
-        manual_parameters=[
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Access Token",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
-        request_body=MTNMomoPaymentSerializer,
-        responses={
-            200: openapi.Response(
-                description="Post updated successfully", schema=PostSerializer
-            ),
-            404: openapi.Response(description="Post not found"),
-            400: openapi.Response(description="Bad Request - validation errors"),
-            401: "Unauthorized",
-        },
-    )
-    def post(self, request):
-        serializer = MTNMomoPaymentSerializer(data=request.data)
-        if serializer.is_valid():
-            amount = serializer.validated_data["amount"]
-            phone_number = serializer.validated_data["phone_number"]
-            tx_ref = serializer.validated_data["tx_ref"]
-            currency = serializer.validated_data["currency"]
-            order_id = serializer.validated_data["order_id"]
-
-            try:
-                # Retrieve the order
-                order = Order.objects.get(id=order_id)
-
-                # Create a Payment record
-                payment = Payment.objects.create(
-                    order=order,
-                    tx_ref=tx_ref,
-                    amount=amount,
-                    status="Pending",
-                )
-                print("Payment created successfully:", payment)
-                # Charge the mobile money payment
-                response = rave.MobileMoney.charge(
-                    {
-                        "txRef": tx_ref,
-                        "amount": amount,
-                        "currency": currency,
-                        "payment_type": "mobilemoneyrwanda",
-                        "phonenumber": phone_number,
-                        "redirect_url": "https://agri-ok.vercel.app/",  # Redirect after payment
-                    }
-                )
-                print(response)
-                # Update payment and order status if transaction is complete
-                if response.get("transactionComplete"):
-                    payment.complete_payment()
-                    return JsonResponse(
-                        {"message": "Payment successful! Order status updated."},
-                        status=status.HTTP_201_CREATED,
-                    )
-                else:
-                    return JsonResponse(
-                        {"message": "Transaction is pending."},
-                        status=status.HTTP_202_ACCEPTED,
-                    )
-
-            except Order.DoesNotExist:
-                return JsonResponse(
-                    {"error": "Order not found."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-            except RaveExceptions.TransactionChargeError as e:
-                return JsonResponse(
-                    {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-                )
-            except Exception as e:
-                return JsonResponse(
-                    {"error": "An error occurred."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class VerifyPaymentView(APIView):
-    def post(self, request):
-        tx_ref = request.data.get("tx_ref")
-
-        if not tx_ref:
-            return JsonResponse(
-                {"error": "tx_ref is required."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            response = rave.Transaction.verify(tx_ref)
-            if response.get("transactionComplete"):
-                return JsonResponse(
-                    {"message": "Transaction verified!"}, status=status.HTTP_200_OK
-                )
-            else:
-                return JsonResponse(
-                    {"message": "Transaction not complete."},
-                    status=status.HTTP_202_ACCEPTED,
-                )
-
-        except RaveExceptions.TransactionVerificationError as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
 class GetProductView(APIView):
     """Retrieve all products. Authentication not needed"""
 
@@ -1810,3 +1691,46 @@ class RetrieveUserCertificatesView(APIView):
         certificates = ClientCertificate.objects.filter(user=user)
         serializer = ClientCertificateDetailSerializer(certificates, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MomoPaymentView(APIView):
+    """Make payment with MTN Momo"""
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Payment with MTN Momo",
+        operation_description="This endpoint allows a user to make payment with mtn momo.",
+        tags=["MTN Momo Payment Request"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Access Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        request_body=MomoPaymentSerializer,
+        responses={
+            201: openapi.Response(
+                description=" Payment Request Successful",
+                schema=MomoPaymentSerializer,
+            ),
+            400: openapi.Response(description="Bad request"),
+        },
+    )
+    def post(self, request):
+        serializer = MomoPaymentSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                response = request_payment(**serializer.validated_data)
+                return Response(
+                    {"message": "Payment request sent.", "details": response},
+                    status=status.HTTP_200_OK,
+                )
+            except Exception as e:
+                return Response(
+                    {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -199,3 +199,17 @@ INFLUXDB = {
     "org": os.getenv("INFLUX_DB_ORG"),
     "bucket": os.getenv("INFLUX_DB_BUCKET"),
 }
+
+
+# MOMOAPI_CONFIG = {
+#     "SUBSCRIPTION_KEY": "9ce6050bfb8441a4b36a3324aae03a9d",
+#     "USER_ID": "90fc3be9-666c-41f0-b9e0-204c3df3e3a3",
+#     "API_KEY": "6f2122f0c95d47f7bb20829934ee881a",
+#     "BASE_URL": "https://sandbox.momodeveloper.mtn.com",
+# }
+
+MOMO_BASE_URL = os.getenv("MOMO_BASE_URL")
+MOMO_API_KEY = os.getenv("MOMO_API_KEY")
+MOMO_SUBSCRIPTION_KEY = os.getenv("MOMO_SUBSCRIPTION_KEY")
+MOMO_USER_ID = os.getenv("MOMO_SUBSCRIPTION_KEY")
+MOMO_CALLBACK_URL = os.getenv("MOMO_CALLBACK_URL")

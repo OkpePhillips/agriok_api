@@ -17,22 +17,23 @@ class ApiConfig(AppConfig):
     def ready(self):
         import api.signals
 
-        # atexit.register(self.shutdown)
-
-        # # Start MQTT in a separate thread using asyncio properly
-        # threading.Thread(target=self.start_mqtt_service, daemon=True).start()
+        # Start MQTT in a separate thread using asyncio properly
+        threading.Thread(target=self.start_mqtt_service, daemon=True).start()
 
     def start_mqtt_service(self):
         """
         Starts the MQTT service in a new thread using an event loop.
         """
-        loop = asyncio.new_event_loop()  # Create a new event loop for this thread
-        asyncio.set_event_loop(loop)  # Set the loop for this thread
-
         # Running the asynchronous function in the event loop
-        loop.run_until_complete(self.run_mqtt_client())
+        self.run_mqtt_client()
 
-    async def run_mqtt_client(self):
+    def mqtt_wrapper(self):
+
+        self.mqtt_client.connect()
+        self.mqtt_client.subscribe("test/finally", self.save_data_to_db)
+        self.mqtt_client.loop_forever()
+
+    def run_mqtt_client(self):
         """
         This method is responsible for setting up and running the MQTT client.
         """
@@ -44,30 +45,25 @@ class ApiConfig(AppConfig):
             )
 
             # Initialize MQTT Client
-            self.mqtt_client = MQTTClient(client_cert, "test", "localhost", 8883)
+            self.mqtt_client = MQTTClient(
+                client_cert, "test", "ec2-54-235-239-93.compute-1.amazonaws.com", 8883
+            )
 
             # Register the callback to handle incoming messages
             self.mqtt_client.on_message = self.save_data_to_db
 
             # Try to connect to the MQTT Broker
             try:
-                await asyncio.to_thread(self.mqtt_client.connect)
-                print("Connected to MQTT Broker!")
+                self.mqtt_wrapper()
             except Exception as e:
-                print(f"Failed to connect: {e}")
+                print(f"Failed to initiate thread: {e}")
                 return
-
-            # Subscribe to the topic
-            self.mqtt_client.subscribe("test/topic", self.save_data_to_db)
-
-        # Start the MQTT client loop in a separate thread
-        await asyncio.to_thread(self.mqtt_client.loop_forever)
 
     def save_data_to_db(self, client, userdata, message):
         """
         Callback function to save incoming MQTT message data to InfluxDB.
         """
-
+        print(message.payload.decode())
         # Decode and parse the message payload as JSON
         try:
             data = json.loads(message.payload.decode("utf-8"))
@@ -88,7 +84,8 @@ class ApiConfig(AppConfig):
             point = (
                 Point("temperature")  # Corrected typo
                 .tag("location", "test")
-                .field("value", data["value"])
+                .field("sensor", data["value"])
+                .field("client_id", data["client_id"])
             )
             write_api.write(
                 bucket=settings.INFLUXDB["bucket"],
@@ -100,13 +97,13 @@ class ApiConfig(AppConfig):
         finally:
             influx_client.close()
 
-    def shutdown(self):
-        """
-        Gracefully shutdown the MQTT client.
-        """
-        if self.mqtt_client:
-            try:
-                self.mqtt_client.disconnect()
-                print("MQTT client disconnected")
-            except Exception as e:
-                print(f"Error disconnecting MQTT client: {e}")
+    # def shutdown(self):
+    #     """
+    #     Gracefully shutdown the MQTT client.
+    #     """
+    #     if self.mqtt_client:
+    #         try:
+    #             self.mqtt_client.disconnect()
+    #             print("MQTT client disconnected")
+    #         except Exception as e:
+    #             print(f"Error disconnecting MQTT client: {e}")

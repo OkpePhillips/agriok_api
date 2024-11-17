@@ -2,9 +2,7 @@ from django.apps import AppConfig
 from influxdb_client import InfluxDBClient, Point
 import json
 from django.conf import settings
-import asyncio
 import threading
-import atexit
 from src.certificates import ClientCert
 from src.mqtt import MQTTClient
 
@@ -97,13 +95,3 @@ class ApiConfig(AppConfig):
         finally:
             influx_client.close()
 
-    # def shutdown(self):
-    #     """
-    #     Gracefully shutdown the MQTT client.
-    #     """
-    #     if self.mqtt_client:
-    #         try:
-    #             self.mqtt_client.disconnect()
-    #             print("MQTT client disconnected")
-    #         except Exception as e:
-    #             print(f"Error disconnecting MQTT client: {e}")

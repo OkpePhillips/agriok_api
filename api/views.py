@@ -56,6 +56,7 @@ from django.core.cache import cache
 from src.certificates import Subject, CertificateAuthority, ClientCertificateGenerator
 import os
 from .momo import request_payment, check_payment_status
+from .utils import query_influxdb
 
 
 class RegisterView(APIView):
@@ -1734,3 +1735,186 @@ class MomoPaymentView(APIView):
                     {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TemperatureDataView(APIView):
+    """
+    API view to query temperature data from InfluxDB.
+    """
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve Temperature Data",
+        operation_description=(
+            "Fetch temperature data from the last 10 hours stored in InfluxDB. "
+            "This endpoint retrieves data from the 'temperature' measurement and "
+            "returns it in a structured format."
+        ),
+        tags=["Sensor-Data"],
+        responses={
+            200: openapi.Response(
+                description="List of temperature data points.",
+                examples={
+                    "application/json": [
+                        {
+                            "time": "2024-11-17T10:30:00Z",
+                            "value": 25.3,
+                            "field": "temperature",
+                            "tags": {
+                                "location": "greenhouse",
+                                "sensor": "sensor_42",
+                                "_measurement": "temperature",
+                            },
+                        },
+                        {
+                            "time": "2024-11-17T11:00:00Z",
+                            "value": 26.1,
+                            "field": "temperature",
+                            "tags": {
+                                "location": "warehouse",
+                                "sensor": "sensor_13",
+                                "_measurement": "temperature",
+                            },
+                        },
+                    ]
+                },
+            ),
+            500: openapi.Response(description="Failed to fetch data from InfluxDB."),
+        },
+    )
+    def get(self, request):
+        # Example query to fetch data
+        query = f"""
+        from(bucket: "{settings.INFLUXDB['bucket']}")
+          |> range(start: -10h)  // Last 10 hour
+          |> filter(fn: (r) => r._measurement == "temperature")
+        """
+        results = query_influxdb(query)
+
+        if not results:
+            return Response(
+                {"error": "Failed to fetch data"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Process results into a friendly format
+        data = []
+        for table in results:
+            for record in table.records:
+                data.append(
+                    {
+                        "time": record.get_time(),
+                        "value": record.get_value(),
+                        "field": record.get_field(),
+                        "tags": record.values,
+                    }
+                )
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class UserTemperatureDataView(APIView):
+    """
+    API view to fetch temperature data for the authenticated user with dynamic filters.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve Temperature Data",
+        operation_description="Fetch temperature data for the authenticated user with optional time range and filters.",
+        tags=["Sensor-Data"],
+        manual_parameters=[
+            openapi.Parameter(
+                "start",
+                openapi.IN_QUERY,
+                description="Start time (e.g., -1h, 2024-11-01T00:00:00Z)",
+                type=openapi.TYPE_STRING,
+                required=False,
+                default="-1h",
+            ),
+            openapi.Parameter(
+                "end",
+                openapi.IN_QUERY,
+                description="End time (e.g., now, 2024-11-17T00:00:00Z)",
+                type=openapi.TYPE_STRING,
+                required=False,
+                default="now",
+            ),
+            openapi.Parameter(
+                "location",
+                openapi.IN_QUERY,
+                description="Filter by location (optional)",
+                type=openapi.TYPE_STRING,
+                required=False,
+            ),
+            openapi.Parameter(
+                "sensor",
+                openapi.IN_QUERY,
+                description="Filter by sensor ID (optional)",
+                type=openapi.TYPE_STRING,
+                required=False,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="A list of temperature data points for the authenticated user.",
+                examples={
+                    "application/json": [
+                        {
+                            "time": "2024-11-17T10:30:00Z",
+                            "value": 25.3,
+                            "field": "temperature",
+                            "tags": {
+                                "location": "greenhouse",
+                                "sensor": "sensor_42",
+                                "_measurement": "temperature_data",
+                            },
+                        }
+                    ]
+                },
+            ),
+            404: "No data found for the specified filters.",
+            401: "Authentication failed.",
+        },
+    )
+    def get(self, request):
+        # Extract query parameters
+        user_id = request.user.id
+        start = request.query_params.get("start", "-1h")
+        end = request.query_params.get("end", "now")
+        location = request.query_params.get("location")
+        sensor = request.query_params.get("sensor")
+
+        # Build and execute the query
+        query = f"""
+        from(bucket: "{settings.INFLUXDB['bucket']}")
+          |> range(start: {start}, stop: {end})
+          |> filter(fn: (r) => r._measurement == "temperature_data")
+          |> filter(fn: (r) => r.user_id == "{user_id}")
+        """
+        if location:
+            query += f'  |> filter(fn: (r) => r.location == "{location}")\n'
+        if sensor:
+            query += f'  |> filter(fn: (r) => r.sensor == "{sensor}")\n'
+
+        results = query_influxdb(query)
+
+        if not results:
+            return Response(
+                {"error": "No data found for the specified filters"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Process and return results
+        data = [
+            {
+                "time": record.get_time(),
+                "value": record.get_value(),
+                "field": record.get_field(),
+                "tags": record.values,
+            }
+            for table in results
+            for record in table.records
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)

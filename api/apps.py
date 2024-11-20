@@ -28,7 +28,7 @@ class ApiConfig(AppConfig):
     def mqtt_wrapper(self):
 
         self.mqtt_client.connect()
-        self.mqtt_client.subscribe("test/finally", self.save_data_to_db)
+        self.mqtt_client.subscribe("test/topic", self.save_data_to_db)
         self.mqtt_client.loop_forever()
 
     def run_mqtt_client(self):
@@ -80,10 +80,10 @@ class ApiConfig(AppConfig):
             # Create a point and write data to InfluxDB
             write_api = influx_client.write_api()
             point = (
-                Point("temperature")  # Corrected typo
+                Point("Moisture")  # Corrected typo
                 .tag("location", "test")
-                .field("sensor", data["value"])
-                .field("client_id", data["client_id"])
+                .field("Moisture", data["moisture"])
+                .field("Moisture_Percentage", data["moisturePercentage"])
             )
             write_api.write(
                 bucket=settings.INFLUXDB["bucket"],
@@ -94,4 +94,3 @@ class ApiConfig(AppConfig):
             print(f"Error writing to InfluxDB: {e}, Data: {data}")
         finally:
             influx_client.close()
-

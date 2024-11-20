@@ -1743,16 +1743,16 @@ class TemperatureDataView(APIView):
     """
 
     @swagger_auto_schema(
-        operation_summary="Retrieve Temperature Data",
+        operation_summary="Retrieve Sensor Data",
         operation_description=(
-            "Fetch temperature data from the last 10 hours stored in InfluxDB. "
-            "This endpoint retrieves data from the 'temperature' measurement and "
+            "Fetch moisture data from the last 10 hours stored in InfluxDB. "
+            "This endpoint retrieves data from the 'moisture' measurement and "
             "returns it in a structured format."
         ),
         tags=["Sensor-Data"],
         responses={
             200: openapi.Response(
-                description="List of temperature data points.",
+                description="List of Moisture data points.",
                 examples={
                     "application/json": [
                         {
@@ -1786,7 +1786,7 @@ class TemperatureDataView(APIView):
         query = f"""
         from(bucket: "{settings.INFLUXDB['bucket']}")
           |> range(start: -10h)  // Last 10 hour
-          |> filter(fn: (r) => r._measurement == "temperature")
+          |> filter(fn: (r) => r._measurement == "Moisture")
         """
         results = query_influxdb(query)
 

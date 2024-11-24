@@ -44,7 +44,7 @@ class ApiConfig(AppConfig):
 
             # Initialize MQTT Client
             self.mqtt_client = MQTTClient(
-                client_cert, "test", "ec2-54-235-239-93.compute-1.amazonaws.com", 8883
+                client_cert, "test", "ec2-18-206-126-63.compute-1.amazonaws.com", 8883
             )
 
             # Register the callback to handle incoming messages
@@ -97,7 +97,6 @@ class ApiConfig(AppConfig):
                 point = point.tag("id", str(farm_id))
 
             for key, value in sensor_data.items():
-                # Replace spaces and special characters in the key for consistency
                 point = point.field(key, value)
 
             write_api.write(

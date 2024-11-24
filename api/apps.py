@@ -69,6 +69,18 @@ class ApiConfig(AppConfig):
             print(f"Error decoding JSON: {e}")
             return  # Exit the function if JSON decoding fails
 
+        if "data" not in data:
+            print(f"Missing 'data' key in JSON payload: {data}")
+            return
+
+        try:
+            sensor_data = data["data"]
+        except KeyError as e:
+            print(f"Missing key in JSON payload: {e}")
+            return
+
+        farm_id = data.get("id", None)
+
         # Set up the InfluxDB client and API
         influx_client = InfluxDBClient(
             url=settings.INFLUXDB["url"],
@@ -79,12 +91,15 @@ class ApiConfig(AppConfig):
         try:
             # Create a point and write data to InfluxDB
             write_api = influx_client.write_api()
-            point = (
-                Point("Moisture")  # Corrected typo
-                .tag("location", "test")
-                .field("Moisture", data["moisture"])
-                .field("Moisture_Percentage", data["moisturePercentage"])
-            )
+            point = Point("SensorData").tag("location", "test")
+
+            if farm_id is not None:
+                point = point.tag("id", str(farm_id))
+
+            for key, value in sensor_data.items():
+                # Replace spaces and special characters in the key for consistency
+                point = point.field(key, value)
+
             write_api.write(
                 bucket=settings.INFLUXDB["bucket"],
                 org=settings.INFLUXDB["org"],

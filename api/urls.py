@@ -32,8 +32,7 @@ from .views import (
     UserPostView,
     UserSpecificPost,
     MomoPaymentView,
-    TemperatureDataView,
-    UserTemperatureDataView,
+    AllSensorDataView,
 )
 
 urlpatterns = [
@@ -88,6 +87,5 @@ urlpatterns = [
     ),
     path("posts/<int:pk>", PostDetailView.as_view(), name="post detail"),
     path("momo-payment", MomoPaymentView.as_view(), name="momo-payment"),
-    path("sensor-data", TemperatureDataView.as_view(), name="temperature-data"),
-    path("user-sensor-data", UserTemperatureDataView.as_view(), name="temperature-data"),
+    path("sensor-data", AllSensorDataView.as_view(), name="temperature-data"),
 ]

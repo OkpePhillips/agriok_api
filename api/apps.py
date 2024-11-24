@@ -28,7 +28,7 @@ class ApiConfig(AppConfig):
     def mqtt_wrapper(self):
 
         self.mqtt_client.connect()
-        self.mqtt_client.subscribe("test/topic", self.save_data_to_db)
+        self.mqtt_client.subscribe("test/finally", self.save_data_to_db)
         self.mqtt_client.loop_forever()
 
     def run_mqtt_client(self):
@@ -108,3 +108,5 @@ class ApiConfig(AppConfig):
             print(f"Error writing to InfluxDB: {e}, Data: {data}")
         finally:
             influx_client.close()
+
+

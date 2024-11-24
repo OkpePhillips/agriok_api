@@ -56,7 +56,9 @@ from django.core.cache import cache
 from src.certificates import Subject, CertificateAuthority, ClientCertificateGenerator
 import os
 from .momo import request_payment, check_payment_status
-from .utils import query_influxdb
+from .utils import query_influxdb, process_sensor_data
+import json
+from collections import defaultdict
 
 
 class RegisterView(APIView):
@@ -2006,8 +2008,10 @@ class AllSensorDataView(APIView):
         # Collect all farmland IDs
         farmland_ids = [str(farmland.id) for farmland in user_farmlands]
 
-        # Convert farmland_ids to Flux-compatible array format
-        flux_farmland_ids = f'[{", ".join(f"\"{id}\"" for id in farmland_ids)}]'
+        if len(farmland_ids) == 1:
+            filter_condition = f'r["id"] == "{farmland_ids[0]}"'
+        else:
+            filter_condition = " or ".join([f'r["id"] == "{id}"' for id in farmland_ids])
 
         # Set up the InfluxDB client
         try:
@@ -2015,24 +2019,10 @@ class AllSensorDataView(APIView):
             query = f"""
             from(bucket: "{settings.INFLUXDB['bucket']}")
             |> range(start: {flux_time_range})
-            |> filter(fn: (r) => r["id"] in [{flux_farmland_ids}])
+            |> filter(fn: (r) => {filter_condition})
             """
             tables = query_influxdb(query)
-
-            # Group sensor data by farmland ID
-            sensor_data = {farmland_id: [] for farmland_id in farmland_ids}
-            for table in tables:
-                for record in table.records:
-                    farmland_id = record.values.get("id")
-                    if farmland_id in sensor_data:
-                        sensor_data[farmland_id].append(
-                            {
-                                "time": record.get_time(),
-                                "measurement": record.get_measurement(),
-                                **record.values,  # Include all fields dynamically
-                            }
-                        )
-
+            sensor_data = process_sensor_data(tables)
             return Response({"sensor_data": sensor_data})
 
         except Exception as e:

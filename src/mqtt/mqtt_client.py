@@ -52,7 +52,7 @@ class MQTTClient:
             topic (str): The topic to subscribe to on the broker.
             on_message_callback (Callable): Function to handle messages received on this topic.
         """
-        self.client.subscribe(topic)
+        self.client.subscribe(topic, 1)
         self.client.on_message = on_message_callback
         print(f"Subscribed to topic: {topic}")
 
@@ -64,7 +64,7 @@ class MQTTClient:
             topic (str): The topic on the broker to publish the message to.
             payload (str): The message payload to be sent.
         """
-        self.client.publish(topic, payload)
+        self.client.publish(topic, payload, 1)
         print(f"Published message to {topic}: {payload}")
 
     def loop_forever(self) -> None:

@@ -1936,10 +1936,10 @@ class AllSensorDataView(APIView):
             openapi.Parameter(
                 "time_range",
                 openapi.IN_QUERY,
-                description="The time range for the data (e.g., -1h, 30d, 7d). Default is -30d.",
+                description="The time range for the data (e.g., 1h, 30d, 7d). Default is 30d.",
                 type=openapi.TYPE_STRING,
                 required=False,
-                default="-30d",  # Default to 30 days
+                default="30d",  # Default to 30 days
             ),
             # Access token parameter (not commonly passed in query params, but included here for clarity)
             openapi.Parameter(
